@@ -1,6 +1,6 @@
 package Ingestion;
 
-import Utilities.S3Upload;
+import utils.S3Upload;
 import org.testng.annotations.*;
 
 public class UserIngestion extends BaseTest{

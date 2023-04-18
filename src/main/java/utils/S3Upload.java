@@ -1,4 +1,4 @@
-package Utilities;
+package utils;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
