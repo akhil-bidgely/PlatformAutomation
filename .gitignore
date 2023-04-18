@@ -1,0 +1,47 @@
+# Java Files & Packages
+ *.class
+ *.ear
+ *.jar
+ *.war
+
+ # Eclipse Project Files
+ .project
+ .settings/
+ .classpath
+ .classpath/target
+ .externalToolBuilders/
+
+ # IntelliJ Project Files
+ .idea/
+ *.idea
+ *.iml
+ *.ipr
+ *.iws
+
+ # VSCode Project Files
+ .vscode/
+
+ # Maven Project Files
+ target/
+ bin/
+
+ # (Needs to go away)
+ dependency-reduced-pom.xml
+
+ # Other files
+ *.bak
+ *.log
+ *.swp
+ tmp
+ *.tmp
+ .DS_Store
+ .metadata
+ presets/
+ *.pydevproject
+ .loadpath
+ */${sys*
+
+ warehouse/etlservices/.cache-main
+ /data-server/run-local-tomcat.sh
+ **/**/pom.xml.versionsBackup
+ pom.xml.versionsBackup
