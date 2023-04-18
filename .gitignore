@@ -22,7 +22,7 @@
  .vscode/
 
  # Maven Project Files
- target/
+ target/*
  bin/
 
  # (Needs to go away)
