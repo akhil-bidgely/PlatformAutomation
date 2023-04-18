@@ -1,17 +1,15 @@
 package Ingestion;
 
+import Utilities.S3Upload;
 import org.testng.annotations.*;
 
-public class UserIngestion {
-
+public class UserIngestion extends BaseTest{
 
     @Test
     void demo1(){
-        System.out.println("Akhil");
-    }
+        S3Upload.s3UploadFile();
+        //Internal bucket file upload
 
-    @Test
-    void demo2(){
-        System.out.println("Akhil");
+
     }
 }
