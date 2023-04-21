@@ -1,5 +1,6 @@
-package utils;
+package CommonUtils;
 
+import PojoClasses.UserFilePOJO;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.regions.Regions;
@@ -12,13 +13,13 @@ import java.io.File;
 
 public class S3Upload {
 
-    public static void s3UploadFile(String filePath){
+    public static void s3UploadFile(UserFilePOJO filePath){
         Regions clientRegion = Regions.DEFAULT_REGION;
         String bucketName = "bidgely-amerenres-nonprodqa";
         String stringObjKeyName = "";
-        String[] fileNameTemp  = filePath.split("/");
+        String[] fileNameTemp  = filePath.getUserfile_abs_path().split("/");
         String fileObjKeyName = fileNameTemp[fileNameTemp.length-1];
-        String fileName = filePath;
+        String fileName = filePath.getUserfile_abs_path();
 
         try
 
@@ -35,8 +36,7 @@ public class S3Upload {
             // Upload a file as a new object with ContentType and title specified.
             PutObjectRequest request = new PutObjectRequest(bucketName, fileObjKeyName, new File(fileName));
             ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType("plain/text");
-            metadata.addUserMetadata("title", "someTitle");
+            metadata.addUserMetadata("utility_file_name", fileObjKeyName);
             request.setMetadata(metadata);
             s3Client.putObject(request);
         } catch(
