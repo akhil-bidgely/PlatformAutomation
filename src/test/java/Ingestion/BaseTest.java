@@ -1,6 +1,10 @@
 package Ingestion;
 
+import PojoClasses.UserFileAmi;
+import ResponseValidation.IngestionValidations;
+
 public class BaseTest {
 
-//    S3Upload s3Upload= new S3Upload();
+    IngestionValidations ingestionValidations = new IngestionValidations();
+    UserFileAmi userFileAmi = new UserFileAmi();
 }

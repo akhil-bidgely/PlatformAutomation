@@ -5,11 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.Map;
 
 public class JsonUtils {
 
-
+    private static SecureRandom rnd = new SecureRandom();
 
     private static ObjectMapper objectMapper=new ObjectMapper();
     public static Map<String,String> getJsonDataAsMap(String jsonFileName){
@@ -24,5 +25,16 @@ public class JsonUtils {
         }
 
         return data;
+    }
+
+    public static char getRandomDigit() {
+        String AB = "0123456789";
+        return AB.charAt(rnd.nextInt(AB.length()));
+    }
+
+    public static String getRandom10Digits() {
+        long number = (long) Math.floor(Math.random() * 9_000_000_000L) +
+                1_000_000_000L;
+        return Long.toString(number);
     }
 }

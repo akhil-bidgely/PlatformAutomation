@@ -12,12 +12,13 @@ import java.io.File;
 
 public class S3Upload {
 
-    public static void s3UploadFile(){
+    public static void s3UploadFile(String filePath){
         Regions clientRegion = Regions.DEFAULT_REGION;
         String bucketName = "bidgely-amerenres-nonprodqa";
         String stringObjKeyName = "";
-        String fileObjKeyName = "USERENROLL_D_600401000.csv";
-        String fileName = System.getProperty("user.dir") + "/src/test/resources/AMI_E/" + "USERENROLL_D_600401000.csv";
+        String[] fileNameTemp  = filePath.split("/");
+        String fileObjKeyName = fileNameTemp[fileNameTemp.length-1];
+        String fileName = filePath;
 
         try
 
