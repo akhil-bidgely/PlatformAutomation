@@ -26,6 +26,20 @@ public class RestUtils {
 
     }
 
+    public static Response getMetersApi(String endpoint, String uuid, String token)
+    {
+
+        String basePath="/meta/users/"+uuid+"/homes/1/gws/3/meters";
+        RequestSpecification given = RestAssured.given();
+        Response response = given.baseUri(endpoint).basePath(basePath)
+                .header("Content-Type", "application/json").header("Authorization", "Bearer" + token).log().all()
+                .get();
+        System.out.println("Response :"+ response.then().log().body());
+
+        return response;
+
+    }
+
     public static Response getPartnerUserId(String endpoint,String token, String partnerUserId)
     {
         String basePath="/v2.0/users/";

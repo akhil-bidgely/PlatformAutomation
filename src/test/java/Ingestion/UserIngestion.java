@@ -10,8 +10,9 @@ import CommonUtils.S3Upload;
 import org.testng.annotations.*;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static CommonUtils.JsonUtils.getRandom10Digits;
 
 public class UserIngestion extends BaseTest{
     String token= "";
@@ -26,20 +27,28 @@ public class UserIngestion extends BaseTest{
     }
 
     @Test
-    void userFileIngestion () throws IOException {
+    void fileIngestion () throws IOException {
+
+        String account_id=getRandom10Digits();
+        String premiseId=getRandom10Digits();
+        String user_segment=getRandom10Digits();
 
         //Internal bucket file upload
-        UserFilePOJO fileInfo=userFileAmi.processFile(userFilePOJO);
+        UserFilePOJO fileInfo=userFileAmi.processFile(userFilePOJO,premiseId,account_id,user_segment);
         String baseUrl=jsonDataAsMap.get("baseUri");
 
         S3Upload.s3UploadFile(fileInfo);
 
-        Response partnerUserIdResponse= RestUtils.getPartnerUserId(baseUrl,token,fileInfo.getPremise_id());
+        Response partnerUserIdResponse= RestUtils.getPartnerUserId(baseUrl,token,premiseId);
         uuid=JsonUtils.getUuidFromPremiseId(partnerUserIdResponse);
 
-        Response response= RestUtils.getUsers(baseUrl,uuid,token);
-        Assert.assertEquals(response.getStatusCode(),200);
+        Response usersApiResponse= RestUtils.getUsers(baseUrl,uuid,token);
+        Assert.assertEquals(usersApiResponse.getStatusCode(),200);
 
-        ingestionValidations.validateParams(response.asString(),fileInfo);
+        ingestionValidations.validateParams(usersApiResponse.asString(),fileInfo);
+
+        fileInfo=userFileAmi.processFile(premiseId,account_id,user_segment);
+        S3Upload.s3UploadFile(fileInfo);
+        Response metersApiResponse= RestUtils.getMetersApi(baseUrl,uuid,token);
     }
 }
