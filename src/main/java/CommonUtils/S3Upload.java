@@ -17,9 +17,9 @@ public class S3Upload {
         Regions clientRegion = Regions.DEFAULT_REGION;
         String bucketName = "bidgely-amerenres-nonprodqa";
         String stringObjKeyName = "";
-        String[] fileNameTemp  = filePath.getUserfile_abs_path().split("/");
+        String[] fileNameTemp  = filePath.getFile_abs_path().split("/");
         String fileObjKeyName = fileNameTemp[fileNameTemp.length-1];
-        String fileName = filePath.getUserfile_abs_path();
+        String fileName = filePath.getFile_abs_path();
 
         try
 

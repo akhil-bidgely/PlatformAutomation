@@ -1,6 +1,6 @@
 package Ingestion;
 
-import PojoClasses.UserFileAmi;
+import CommonUtils.UserFileAmi;
 import PojoClasses.UserFilePOJO;
 import ResponseValidation.IngestionValidations;
 
