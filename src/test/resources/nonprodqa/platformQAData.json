@@ -2,6 +2,7 @@
 
   "baseUri":"https://nonprodqaapi.bidgely.com/",
     "username" : "akhil@bidgely.com",
-    "password" : "ab0ufM@bK630"
+    "password" : "ab0ufM@bK630",
+    "pilotId" : "10057"
 
 }

@@ -1,5 +1,6 @@
 package CommonUtils;
 
+import PojoClasses.MeterFilePOJO;
 import PojoClasses.UserFilePOJO;
 
 import java.io.File;
@@ -12,28 +13,35 @@ import static CommonUtils.JsonUtils.getRandom10Digits;
 public class UserFileAmi {
     UserFilePOJO userFilePOJO = new UserFilePOJO();
 
-    public UserFilePOJO processFile(UserFilePOJO userFilePOJO,String premiseId,String account_id,String user_segment) throws IOException {
+    public UserFilePOJO processFile(UserFilePOJO userFilePOJO,String customerId, String partnerUserId,String premiseId) throws IOException {
         File userFile = File.createTempFile("USERENROLL_D_600401000", ".csv");
         System.out.println(userFile.getAbsolutePath());
+        userFilePOJO.setCustomer_id(customerId);
+        userFilePOJO.setPartner_user_id(partnerUserId);
         userFilePOJO.setPremise_id(premiseId);
-        userFilePOJO.setAccount_id(account_id);
-        userFilePOJO.setUser_segment(user_segment);
+        userFilePOJO.setEmail("akhil+500401002@bidgely.com");
+        userFilePOJO.setFirst_name("Akhil");
+        userFilePOJO.setLast_name("Sharma");
+        userFilePOJO.setAddress_1("221B Baker Street");
+        userFilePOJO.setCity("Hackney");
+        userFilePOJO.setState("England");
+        userFilePOJO.setPostal_code("208014");
 
         try (FileWriter writer = new FileWriter(userFile)) {
 
             userFile.deleteOnExit();
             StringBuilder userFileContent = new StringBuilder();
-            userFileContent.append(account_id).append("|")
+            userFileContent.append  (customerId).append("|")
+                    .append(partnerUserId).append("|")
                     .append(premiseId).append("|")
-                    .append(user_segment).append("|").
-                    append("RES").append("|")
-                    .append("moorthi+500401002@bidgely.com").append("|")
-                    .append("DP1278-test-500401002").append("|")
-                    .append("user").append("|")
+                    .append("RES").append("|")
+                    .append("akhil+500401002@bidgely.com").append("|")
+                    .append("Akhil").append("|")
+                    .append("Sharma").append("|")
                     .append("221B Baker Street").append("||||")
-                    .append("Akhil CHARLES").append("|")
-                    .append("MO").append("|")
-                    .append("6883").append("|||||||||||||");
+                    .append("Hackney").append("|")
+                    .append("England").append("|")
+                    .append("208014").append("|||||||||||||");
 
             System.out.println(userFileContent);
             writer.write(userFileContent.toString());
@@ -43,23 +51,29 @@ public class UserFileAmi {
         return userFilePOJO;
     }
 
-    public UserFilePOJO processFile(String premiseId,String account_id,String user_segment) throws IOException {
-        File userFile = File.createTempFile("METERENROLL_D_600401000", ".csv");
-        System.out.println(userFile.getAbsolutePath());
+    public MeterFilePOJO processFile(MeterFilePOJO meterFilePOJO,String customerId, String partnerUserId, String premiseId, String dataStreamId) throws IOException {
+        File meterFile = File.createTempFile("METERENROLL_D_600401000", ".csv");
+        System.out.println(meterFile.getAbsolutePath());
+        meterFilePOJO.setCustomer_id(customerId);
+        meterFilePOJO.setPartner_user_id(partnerUserId);
+        meterFilePOJO.setPremise_id(premiseId);
+        meterFilePOJO.setData_stream_id(dataStreamId);
+        meterFilePOJO.setData_stream_type("AMI");
+        meterFilePOJO.setService_type("ELECTRIC");
 
-        try (FileWriter writer = new FileWriter(userFile)) {
+        try (FileWriter writer = new FileWriter(meterFile)) {
 
-            userFile.deleteOnExit();
+            meterFile.deleteOnExit();
             StringBuilder userFileContent = new StringBuilder();
-            userFileContent.append(account_id).append("|")
+            userFileContent.append(customerId).append("|")
+                    .append(partnerUserId).append("|")
                     .append(premiseId).append("|")
-                    .append(user_segment).append("|").
-                    append("2862740041").append("|")
+                    .append(dataStreamId).append("|")
                     .append("ELECTRIC").append("|")
                     .append("2017-01-01").append("||")
-                    .append("601").append("|")
+                    .append("001").append("|")
                     .append("2020-07-06").append("|")
-                    .append("SS_1").append("|")
+                    .append("4").append("|")
                     .append("2020-07-06").append("|")
                     .append("False").append("|")
                     .append("AMI").append("|");
@@ -67,9 +81,9 @@ public class UserFileAmi {
             System.out.println(userFileContent);
             writer.write(userFileContent.toString());
         }
-        userFilePOJO.setFile_abs_path(userFile.getAbsolutePath());
+        meterFilePOJO.setFile_abs_path(meterFile.getAbsolutePath());
 
-        return userFilePOJO;
+        return meterFilePOJO;
     }
 
 }
