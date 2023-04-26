@@ -9,18 +9,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class UserFilePOJO {
+public class MeterFilePOJO {
     private String customer_id;
     private String partner_user_id;
     private String premise_id;
-
-    private String email;
-    private String first_name;
-    private String last_name;
-    private String address_1;
-    private String address_2;
-    private String city;
-    private String state;
-    private String postal_code;
+    private String data_stream_id;
+    private String service_type;
+    private String data_stream_type;
     private String file_abs_path;
 }

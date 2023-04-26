@@ -9,13 +9,14 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.text.ParseException;
 import java.util.Map;
 
 public class JsonUtils {
 
     private static SecureRandom rnd = new SecureRandom();
 
-    private static ObjectMapper objectMapper=new ObjectMapper();
+    private static final ObjectMapper objectMapper=new ObjectMapper();
     public static Map<String,String> getJsonDataAsMap(String jsonFileName){
         String env=System.getProperty("env")==null?"nonprodqa":System.getProperty("env");
         String completeJsonFilePath=System.getProperty("user.dir")+"/src/test/resources/"+env+"/"+jsonFileName;
@@ -47,5 +48,22 @@ public class JsonUtils {
         JSONArray jsonArray= payloadObj.getJSONArray("data");
         JSONObject obj1=jsonArray.getJSONObject(0);
         return obj1.getString("uuid");
+    }
+    public static String getTimeZone(Response pilotConfigResponse) throws ParseException {
+        JSONObject jsonObject= new JSONObject(pilotConfigResponse.asString());
+        String timeZone="";
+        String payload=jsonObject.getString("launchpad_ingestion_configs").replace("\\\\","");
+        System.out.println(payload);
+        JSONObject json = new JSONObject(payload);
+
+        JSONArray jsonArray= json.getJSONArray("kvs");
+        for(Object jsonObj:jsonArray){
+            JSONObject obj=(JSONObject) jsonObj;
+            if(obj.getString("key").equals("parser_time_zone")){
+                timeZone= obj.getString("val");
+                break;
+            }
+        }
+        return timeZone;
     }
 }
