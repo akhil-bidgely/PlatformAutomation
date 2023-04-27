@@ -1,5 +1,6 @@
 package ResponseValidation;
 
+import CommonUtils.Utils;
 import PojoClasses.MeterFilePOJO;
 import PojoClasses.UserFilePOJO;
 import io.restassured.response.Response;
@@ -8,18 +9,26 @@ import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class IngestionValidations {
-    public void validateUserDetails(String response, UserFilePOJO userFilePOJO, String uuid, String timeZone){
+    public void validateUserDetails(Response response, UserFilePOJO userFilePOJO, String uuid, String timeZone){
         SoftAssert softAssert=new SoftAssert();
-        JSONObject obj= new JSONObject(response);
+        JSONObject obj= new JSONObject(response.asString());
         JSONObject payload=obj.getJSONObject("payload");
+
+
+        Map<String,Object> expectedValueMap = new HashMap<>();
+        expectedValueMap.put("uuid",payload.getString("uuid"));
+        Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
 
         softAssert.assertEquals(uuid,payload.getString("uuid"),"Validation of UUID");
         softAssert.assertEquals(userFilePOJO.getFirst_name(),payload.getString("firstName"),"Validation of First Name");
         softAssert.assertEquals(userFilePOJO.getLast_name(),payload.getString("lastName"),"Validation of Last Name");
         softAssert.assertEquals("ENABLED",payload.getString("status"),"Validation of status");
         softAssert.assertEquals(userFilePOJO.getEmail(),payload.getString("email"),"Validation of email");
-        softAssert.assertEquals("OPT_OU",payload.getString("notificationUserType"),"Validation of notificationUserType");
+        softAssert.assertEquals("OPT_OUT",payload.getString("notificationUserType"),"Validation of notificationUserType");
 
         JSONObject homeAccounts=payload.getJSONObject("homeAccounts");
         softAssert.assertEquals(userFilePOJO.getAddress_1(),homeAccounts.getString("address"),"Validation of address line 1");

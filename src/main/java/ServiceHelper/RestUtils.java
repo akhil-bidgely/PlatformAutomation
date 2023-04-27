@@ -8,6 +8,7 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class RestUtils {
@@ -19,7 +20,7 @@ public class RestUtils {
         ExtentReportManager.logInfoDetails("Request Headers :  ");
         ExtentReportManager.logHeaders(queryableRequestSpecification.getHeaders().asList());
         ExtentReportManager.logInfoDetails("Request Body : ");
-        ExtentReportManager.logJson(queryableRequestSpecification.getBody());
+//        ExtentReportManager.logJson(queryableRequestSpecification.getBody());
     }
 
     public static void printResponseLogInReport(Response response){
@@ -27,7 +28,7 @@ public class RestUtils {
         ExtentReportManager.logInfoDetails("Response headers : ");
         ExtentReportManager.logHeaders(response.getHeaders().asList());
         ExtentReportManager.logInfoDetails("Response Body : ");
-        ExtentReportManager.logJson(response.getBody().prettyPrint());
+//        ExtentReportManager.logJson(response.getBody().prettyPrint());
     }
 
     public static Response getPilotConfigs(String endpoint,String token, String pilotId)
@@ -76,6 +77,22 @@ public class RestUtils {
 
     }
 
+    public static Response getGbJsonApi(String endpoint, String uuid, String token, String t1)
+    {
+
+        String basePath="/streams/users/"+uuid+"/homes/1/gws/2/meters/1/gb.csv?t0=1422776400&t1="+t1;
+        RequestSpecification given = RestAssured.given();
+        Response response = given.baseUri(endpoint).basePath(basePath)
+                .header("Content-Type", "application/json").header("Authorization", "Bearer" + token).log().all()
+                .get();
+        printRequestLogInReport(given);
+        printResponseLogInReport(response);
+        System.out.println("Response :"+ response.then().log().body());
+
+        return response;
+
+    }
+
     public static Response getPartnerUserId(String endpoint,String token, String partnerUserId)
     {
         String basePath="/v2.0/users/";
@@ -98,9 +115,6 @@ public class RestUtils {
                 .header("Content-Type", "application/json").auth().basic(envData.get("username"),envData.get("password"))
                 .params("grant_type","client_credentials").params("scope","all");
         Response response = given.get();
-//        test.log(LogStatus.INFO,given.toString());
-//        test.log(LogStatus.INFO,response.toString());
-
         return response;
 
     }
