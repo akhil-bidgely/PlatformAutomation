@@ -9,6 +9,8 @@ import com.aventstack.extentreports.reporter.configuration.Theme;
 import io.restassured.http.Header;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.aventstack.extentreports.reporter.configuration.Protocol.HTTPS;
@@ -27,6 +29,14 @@ public class ExtentReportManager {
         extentReports = new ExtentReports();
         extentReports.attachReporter(extentSparkReporter);
         return extentReports;
+    }
+
+    public static String getReportNameWithTimeStamp(){
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String formattedTime = dateTimeFormatter.format(localDateTime);
+        String reportName= "TestReport" + formattedTime + ".html";
+        return reportName;
     }
 
     public static void  logpassDetails(String log){

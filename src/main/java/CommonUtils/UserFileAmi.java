@@ -8,10 +8,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
-import static CommonUtils.JsonUtils.getRandom10Digits;
 
 public class UserFileAmi {
-    UserFilePOJO userFilePOJO = new UserFilePOJO();
 
     public UserFilePOJO processFile(UserFilePOJO userFilePOJO,String customerId, String partnerUserId,String premiseId) throws IOException {
         File userFile = File.createTempFile("USERENROLL_D_600401000", ".csv");

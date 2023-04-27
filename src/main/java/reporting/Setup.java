@@ -24,10 +24,10 @@ public class Setup implements ITestListener {
 
     @Override
     public void onStart(ITestContext context) {
-        String fileName = "DemoReport";
+        String fileName = ExtentReportManager.getReportNameWithTimeStamp();
         String reportPath = System.getProperty("user.dir")+"\\reports\\"+fileName;
         try {
-            extentReports = ExtentReportManager.createInstance(reportPath,"Test Api Automation Report","Test Execution Report");
+            extentReports = ExtentReportManager.createInstance(fileName,"Test Api Automation Report","Test Execution Report");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
