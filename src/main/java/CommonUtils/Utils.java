@@ -1,6 +1,8 @@
 package CommonUtils;
 
 import PojoClasses.AssertionKeys;
+import PojoClasses.MeterFilePOJO;
+import PojoClasses.UserFilePOJO;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.regions.Regions;
@@ -9,17 +11,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.aventstack.extentreports.markuputils.MarkupHelper;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvException;
 import io.restassured.response.Response;
-import org.apache.commons.lang3.text.StrSubstitutor;
-import org.apache.poi.ss.format.CellFormatType;
-import org.apache.poi.xssf.usermodel.XSSFShape;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import reporting.ExtentReportManager;
 import reporting.Setup;
+import org.apache.commons.io.FilenameUtils;
+
 
 import java.io.*;
 import java.util.*;
@@ -92,7 +88,7 @@ public class Utils {
             }
         }
         if(allMatched)
-            ExtentReportManager.logpassDetails("All assertion are passed. "+"😊😊😊😊😊😊");
+            ExtentReportManager.logPassDetails("All assertion are passed. "+"😊😊😊😊😊😊");
         else
             ExtentReportManager.logFailureDetails("All assertions are not passed"+ "😔😔😔😔😔");
 
@@ -102,17 +98,16 @@ public class Utils {
     }
 
 
-    public static String processRawFile(String fileToUpdate,String customerId, String partnerUserId, String premiseId,String dataStreamId) throws IOException {
-
-        String[] replacements = {customerId, partnerUserId, premiseId, dataStreamId};
-        Map<String, String> substitutionMap = new HashMap<>();
+    public static String processRawFile(String fileToUpdate, Map<String,String> executionVariables, UserFilePOJO userfileInfo, MeterFilePOJO meterFilePOJO) throws IOException {
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(new File(fileToUpdate)));
             String line = br.readLine();
-            String[] fileParam = br.readLine().split("\\|", 5);
+            String[] fileParam = line.split("\\|", 5);
 
-            File updatedFile = File.createTempFile("RAW_D_900_S_500400306_", ".csv");
+            String fileNameToUpdate=FilenameUtils.getBaseName(fileToUpdate);
+
+            File updatedFile = File.createTempFile(fileNameToUpdate, ".csv");
             updatedFile.deleteOnExit();
             FileWriter writer = new FileWriter(updatedFile);
             System.out.println(updatedFile.getAbsolutePath());
@@ -120,9 +115,28 @@ public class Utils {
             for (int i = 0; i < fileParam.length - 1; i++) {
                 while (line != null) {
                     String updatedLine = "";
-                    updatedLine = line.replace(fileParam[0], replacements[0]).replace(fileParam[1], replacements[1]).replace(fileParam[2], replacements[2])
-                            .replace(fileParam[3], replacements[3]);
+                    if(fileNameToUpdate.contains("USERENROLL")){
+                        updatedLine = line.replace(fileParam[0], executionVariables.get("customerId")).replace(fileParam[1], executionVariables.get("partnerUserId")).replace(fileParam[2],executionVariables.get("premiseId"));
+                        String[] updatedLineArr = updatedLine.split("\\|");
 
+                        userfileInfo.setEmail(updatedLineArr[4]);
+                        userfileInfo.setFirst_name(updatedLineArr[5]);
+                        userfileInfo.setLast_name(updatedLineArr[6]);
+                        userfileInfo.setAddress_1(updatedLineArr[7]);
+                        userfileInfo.setCity(updatedLineArr[11]);
+                        userfileInfo.setState(updatedLineArr[12]);
+                        userfileInfo.setPostal_code(updatedLineArr[13]);
+
+                    }else {
+                        updatedLine = line.replace(fileParam[0], executionVariables.get("customerId")).replace(fileParam[1], executionVariables.get("partnerUserId")).replace(fileParam[2],executionVariables.get("premiseId"))
+                                .replace(fileParam[3],executionVariables.get("dataStreamId"));
+
+                        if(fileNameToUpdate.contains("METER")){
+                            String[] updatedLineArr = updatedLine.split("\\|");
+                            meterFilePOJO.setService_type(updatedLineArr[4]);
+                            meterFilePOJO.setMeter_type(updatedLineArr[12]);
+                        }
+                    }
                     updatedContext.append(updatedLine + System.lineSeparator());
                     line = br.readLine();
                 }
@@ -141,4 +155,39 @@ public class Utils {
             throw new RuntimeException(e);
         }
 
-    }}
+    }
+
+    public static Map<String,String> getTimeStampsConsumption(String fileToUpdate) throws IOException {
+        Map<String,String> timeStampConsumption = new HashMap<>();
+
+        try {
+            LineNumberReader lnr = new LineNumberReader(new FileReader(fileToUpdate));
+            long lines=0;
+            int[] linenos=new int[2];
+            Random random= new Random();
+            linenos[0]=random.nextInt(1000);
+            linenos[1]=random.nextInt(1000);
+            while (lnr.readLine() != null) {
+                lines = lnr.getLineNumber();
+                for(int line:linenos){
+                    if(lines == line){
+                        timeStampConsumption.putAll(getTS(lnr.readLine()));
+                    }
+                }
+            }
+            return timeStampConsumption;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public static Map<String,String> getTS(String s){
+        Map<String,String> map=new HashMap<>();
+        String[] fileParam = s.split("\\|", 7);
+        map.put(fileParam[4],fileParam[5]);
+
+        return map;
+    }
+}

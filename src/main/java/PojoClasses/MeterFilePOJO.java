@@ -17,4 +17,5 @@ public class MeterFilePOJO {
     private String service_type;
     private String data_stream_type;
     private String file_abs_path;
+    private String meter_type;
 }

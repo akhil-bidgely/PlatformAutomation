@@ -1,5 +1,6 @@
 package CommonUtils;
 
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;
@@ -10,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class JsonUtils {
@@ -17,7 +19,8 @@ public class JsonUtils {
     private static SecureRandom rnd = new SecureRandom();
 
     private static final ObjectMapper objectMapper=new ObjectMapper();
-    public static Map<String,String> getJsonDataAsMap(String jsonFileName){
+    //This method might be used later
+    /*public static Map<String,String> getJsonDataAsMap(String jsonFileName){
         String env=System.getProperty("env")==null?"nonprodqa":System.getProperty("env");
         String completeJsonFilePath=System.getProperty("user.dir")+"/src/test/resources/"+env+"/"+jsonFileName;
 
@@ -29,7 +32,7 @@ public class JsonUtils {
         }
 
         return data;
-    }
+    }*/
 
     public static char getRandomDigit() {
         String AB = "0123456789";
@@ -65,5 +68,21 @@ public class JsonUtils {
             }
         }
         return timeZone;
+    }
+
+    public static Map<String,String> getExecutionVariables(){
+        Map<String ,String> map= new HashMap<>();
+        map.put("customerId",getRandom10Digits());
+        map.put("partnerUserId",getRandom10Digits());
+        map.put("premiseId",getRandom10Digits());
+        map.put("dataStreamId",getRandom10Digits());
+
+        return map;
+    }
+
+    public static String getAuthToken(Response tokenResp){
+        JSONObject obj= new JSONObject(tokenResp.getBody().asString());
+        String token=obj.getString("access_token");
+        return token;
     }
 }
