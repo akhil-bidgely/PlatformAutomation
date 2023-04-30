@@ -4,8 +4,9 @@ import PojoClasses.MeterFilePOJO;
 import PojoClasses.RawFilePOJO;
 import PojoClasses.UserFilePOJO;
 import com.opencsv.exceptions.CsvException;
+import io.restassured.RestAssured;
 import io.restassured.response.Response;
-import org.apache.commons.lang3.text.StrSubstitutor;
+import org.hamcrest.Matchers;
 import org.awaitility.Awaitility;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -15,70 +16,97 @@ import CommonUtils.Utils;
 import org.testng.annotations.*;
 
 import java.io.IOException;
+import java.sql.Time;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static CommonUtils.JsonUtils.getRandom10Digits;
+import static CommonUtils.JsonUtils.getAuthToken;
+import static CommonUtils.Utils.getTimeStampsConsumption;
 import static CommonUtils.Utils.processRawFile;
-//import static CommonUtils.Utils.writeCsv;
+import static Constants.FilePaths.*;
+import static Constants.PilotIDs.AMEREN_PILOT_ID;
 
-//@Listeners(ExtentITestListenerClassAdapter.class)
+
 public class UserIngestion extends BaseTest{
     String token= "";
     String uuid= "";
-    Map<String, String> jsonDataAsMap = JsonUtils.getJsonDataAsMap("platformQAData.json");
+    Map<String, String> executionVariables = JsonUtils.getExecutionVariables();
 
     @BeforeMethod
     public void generateToken() {
-        Response response= RestUtils.generateToken(jsonDataAsMap);
-        System.out.println(response.getBody().asString());
-        JSONObject obj= new JSONObject(response.getBody().asString());
-        token=obj.getString("access_token");
+        Response response= restUtils.generateToken();
+        token=getAuthToken(response);
     }
 
     @Test
     public void fileIngestion () throws IOException, ParseException, InterruptedException, java.text.ParseException, CsvException {
 
-        String customerId=getRandom10Digits();
-        String partnerUserId=getRandom10Digits();
-        String premiseId=getRandom10Digits();
-        String dataStreamId=getRandom10Digits();
-
-        //Internal buck et USERENROLL file upload
-        UserFilePOJO userfileInfo=userFileAmi.processFile(userFilePOJO,customerId,partnerUserId,premiseId);
-        String baseUrl=jsonDataAsMap.get("baseUri");
-        String pilotId=jsonDataAsMap.get("pilotId");
-
-        Utils.s3UploadFile(userfileInfo.getFile_abs_path());
+        //Internal bucket USERENROLL file upload
+        UserFilePOJO userfileInfo= new UserFilePOJO();
+        String userTempFilePath=processRawFile(USER_ENROLLMENT_AMI_E,executionVariables,userfileInfo, null);
+        Utils.s3UploadFile(userTempFilePath);
 
         //Calling Partner User API
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> RestUtils.getPartnerUserId(baseUrl,token,partnerUserId).getStatusCode() ==200);
-        Response partnerUserIdResponse= RestUtils.getPartnerUserId(baseUrl,token,partnerUserId);
+        /*Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() ->{
+            Response partnerUserIdResponse=  restUtils.getPartnerUserId(token,executionVariables);
+            JSONObject obj= new JSONObject(partnerUserIdResponse.asString());
+            System.out.println("Length of data : " + obj.getJSONObject("payload").getJSONArray("data").length());
+            if(obj.getJSONObject("payload").getJSONArray("data").length() == 1){
+                return true;
+            }else {
+                return false;
+            }
+        });*/
+
+        Thread.sleep(5000);
+        Response partnerUserIdResponse= restUtils.getPartnerUserId(token,executionVariables);
         uuid=JsonUtils.getUuidFromPremiseId(partnerUserIdResponse);
 
         //Calling Pilot config API
-        Response getPilotConfigResponse= RestUtils.getPilotConfigs(baseUrl,token,jsonDataAsMap.get("pilotId"));
+        Response getPilotConfigResponse= restUtils.getPilotConfigs(token,AMEREN_PILOT_ID);
         String timeZone=JsonUtils.getTimeZone(getPilotConfigResponse);
 
         //Calling User Details API
-        Response usersApiResponse= RestUtils.getUsers(baseUrl,uuid,token);
+        Response usersApiResponse= restUtils.getUsers(uuid,token);
 
         //Validating User Details API response
-        ingestionValidations.validateUserDetails(usersApiResponse,userfileInfo,uuid,timeZone);
+        ingestionValidations.validateUserDetails(usersApiResponse,userfileInfo,uuid,timeZone,executionVariables);
 
         //Internal bucket METERENROLL file upload
-        MeterFilePOJO meterfileInfo=userFileAmi.processFile(meterFilePOJO,customerId,partnerUserId,premiseId,dataStreamId);
-        Utils.s3UploadFile(meterfileInfo.getFile_abs_path());
-        Response metersApiResponse= RestUtils.getMetersApi(baseUrl,uuid,token);
-        ingestionValidations.validateMeters(metersApiResponse.asString(),uuid,pilotId,meterFilePOJO);
+        String meterTempFilePath=processRawFile(METER_ENROLLMENT_AMI_E,executionVariables,null,meterFilePOJO);
+        Utils.s3UploadFile(meterTempFilePath);
+        Thread.sleep(10000);
+//        Awaitility.await().atMost(10,TimeUnit.SECONDS).pollInterval(2, TimeUnit.SECONDS)
+//                .until(() ->RestUtils.getMetersApi(baseUrl,uuid,token).getStatusCode() == 200);
+        Response metersApiResponse= restUtils.getMetersApi(uuid,token);
+        restUtils.printResponseLogInReport(metersApiResponse);
+        ingestionValidations.validateMeters(metersApiResponse.asString(),uuid,AMEREN_PILOT_ID,executionVariables,meterFilePOJO);
 
         //Internal bucket RAW file upload
-        String rawfile=System.getProperty("user.dir")+"/src/test/resources/AMI_E/RAW_D_900_S_500400306.csv";
-        String rawTempFilePath=processRawFile(rawfile,customerId,partnerUserId,premiseId,dataStreamId);
+        String rawTempFilePath=processRawFile(RAW_AMI_E,executionVariables,null,null);
         Utils.s3UploadFile(rawTempFilePath);
+        Thread.sleep(10000);
         String t1 = String.valueOf(Instant.now().getEpochSecond());
-        Response gbJsonApiResponse= RestUtils.getGbJsonApi(baseUrl,uuid,token,t1);
+
+        //Calling Label TimeStamp API
+        Response label= restUtils.getLabelTimeStamp(uuid,token);
+        ingestionValidations.validateLableTimeStamp(label.asString());
+
+        //Calling gbJson API
+        Response gbJsonApiResponse= restUtils.getGbJsonApi(uuid,token,t1);
+        Map<String, String> mapTimestampConsumption = getTimeStampsConsumption(rawTempFilePath);
+        ingestionValidations.validateGbJsonConsumption(rawTempFilePath,gbJsonApiResponse.asString(),mapTimestampConsumption);
+
+        //Internal bucket Invoice file upload
+        String invoiceTempFilePath=processRawFile(INVOICE_AMI_E,executionVariables,null,null);
+        Utils.s3UploadFile(invoiceTempFilePath);
+        Thread.sleep(10000);
+
+        //Calling INVOICE API
+        Response gbDisaggResponse= restUtils.getGbDisaggResp(uuid,token);
+        ingestionValidations.validateGbDisaggResp(gbDisaggResponse.asString());
 
 
 

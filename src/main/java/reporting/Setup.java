@@ -12,22 +12,24 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public class Setup implements ITestListener {
-    private static ExtentReports extentReports;
-    public static ExtentTest test;
+    public static ExtentReports extentReports;
+    public static ExtentTest parentExtent;
+    public static ExtentTest childExtent;
     public static ThreadLocal<ExtentTest> extentTest = new ThreadLocal<>();
 
     @Override
     public void onTestStart(ITestResult result) {
-        test= extentReports.createTest(result.getTestClass()+" :- "+result.getMethod().getMethodName());
-        extentTest.set(test);
+        parentExtent= extentReports.createTest(result.getTestClass()+" :- "+result.getMethod().getMethodName());
+        childExtent = parentExtent.createNode("Child");
+        extentTest.set(parentExtent);
     }
 
     @Override
     public void onStart(ITestContext context) {
         String fileName = ExtentReportManager.getReportNameWithTimeStamp();
-        String reportPath = System.getProperty("user.dir")+"\\reports\\"+fileName;
+        String reportPath = System.getProperty("user.dir")+"/target/reports";
         try {
-            extentReports = ExtentReportManager.createInstance(fileName,"Test Api Automation Report","Test Execution Report");
+            extentReports = ExtentReportManager.createInstance(reportPath,"Test Api Automation Report","Test Execution Report");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

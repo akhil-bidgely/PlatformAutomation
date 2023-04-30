@@ -2,21 +2,24 @@ package CommonUtils;
 
 import PojoClasses.MeterFilePOJO;
 import PojoClasses.UserFilePOJO;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 
 public class UserFileAmi {
 
-    public UserFilePOJO processFile(UserFilePOJO userFilePOJO,String customerId, String partnerUserId,String premiseId) throws IOException {
+    //Generic method created for processing all kind of files
+    /*public UserFilePOJO processFile(UserFilePOJO userFilePOJO, Map<String,String> executionVariables) throws IOException {
         File userFile = File.createTempFile("USERENROLL_D_600401000", ".csv");
         System.out.println(userFile.getAbsolutePath());
-        userFilePOJO.setCustomer_id(customerId);
-        userFilePOJO.setPartner_user_id(partnerUserId);
-        userFilePOJO.setPremise_id(premiseId);
+        userFilePOJO.setCustomer_id(executionVariables.get("customerId"));
+        userFilePOJO.setPartner_user_id(executionVariables.get("partnerUserId"));
+        userFilePOJO.setPremise_id(executionVariables.get("premiseId"));
         userFilePOJO.setEmail("akhil+500401002@bidgely.com");
         userFilePOJO.setFirst_name("Akhil");
         userFilePOJO.setLast_name("Sharma");
@@ -29,9 +32,9 @@ public class UserFileAmi {
 
             userFile.deleteOnExit();
             StringBuilder userFileContent = new StringBuilder();
-            userFileContent.append  (customerId).append("|")
-                    .append(partnerUserId).append("|")
-                    .append(premiseId).append("|")
+            userFileContent.append  (executionVariables.get("customerId")).append("|")
+                    .append(executionVariables.get("partnerUserId")).append("|")
+                    .append(executionVariables.get("premiseId")).append("|")
                     .append("RES").append("|")
                     .append("akhil+500401002@bidgely.com").append("|")
                     .append("Akhil").append("|")
@@ -47,15 +50,15 @@ public class UserFileAmi {
         userFilePOJO.setFile_abs_path(userFile.getAbsolutePath());
 
         return userFilePOJO;
-    }
+    }*/
 
-    public MeterFilePOJO processFile(MeterFilePOJO meterFilePOJO,String customerId, String partnerUserId, String premiseId, String dataStreamId) throws IOException {
+    public MeterFilePOJO processFile(MeterFilePOJO meterFilePOJO,Map<String,String> executionVariables) throws IOException {
         File meterFile = File.createTempFile("METERENROLL_D_600401000", ".csv");
         System.out.println(meterFile.getAbsolutePath());
-        meterFilePOJO.setCustomer_id(customerId);
-        meterFilePOJO.setPartner_user_id(partnerUserId);
-        meterFilePOJO.setPremise_id(premiseId);
-        meterFilePOJO.setData_stream_id(dataStreamId);
+        meterFilePOJO.setCustomer_id(executionVariables.get("customerId"));
+        meterFilePOJO.setPartner_user_id(executionVariables.get("partnerUserId"));
+        meterFilePOJO.setPremise_id(executionVariables.get("premiseId"));
+        meterFilePOJO.setData_stream_id(executionVariables.get("dataStreamId"));
         meterFilePOJO.setData_stream_type("AMI");
         meterFilePOJO.setService_type("ELECTRIC");
 
@@ -63,10 +66,10 @@ public class UserFileAmi {
 
             meterFile.deleteOnExit();
             StringBuilder userFileContent = new StringBuilder();
-            userFileContent.append(customerId).append("|")
-                    .append(partnerUserId).append("|")
-                    .append(premiseId).append("|")
-                    .append(dataStreamId).append("|")
+            userFileContent.append(executionVariables.get("customerId")).append("|")
+                    .append(executionVariables.get("partnerUserId")).append("|")
+                    .append(executionVariables.get("premiseId")).append("|")
+                    .append(executionVariables.get("dataStreamId")).append("|")
                     .append("ELECTRIC").append("|")
                     .append("2017-01-01").append("||")
                     .append("001").append("|")
