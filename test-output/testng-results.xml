@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results ignored="1" total="2" passed="1" failed="0" skipped="0">
+  <reporter-output>
+  </reporter-output>
+  <suite started-at="2023-05-03T11:14:08 IST" name="PlatformAutomation" finished-at="2023-05-03T11:14:36 IST" duration-ms="28568">
+    <groups>
+    </groups>
+    <test started-at="2023-05-03T11:14:08 IST" name="/Users/akhilsharma/IdeaProjects/PlatformAutomation" finished-at="2023-05-03T11:14:36 IST" duration-ms="28568">
+      <class name="Ingestion.UserIngestion">
+        <test-method is-config="true" signature="generateToken()[pri:0, instance:Ingestion.UserIngestion@55a147cc]" started-at="2023-05-03T11:14:13 IST" name="generateToken" finished-at="2023-05-03T11:14:16 IST" duration-ms="3141" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- generateToken -->
+        <test-method signature="testFireHose()[pri:0, instance:Ingestion.UserIngestion@55a147cc]" started-at="2023-05-03T11:14:16 IST" name="testFireHose" finished-at="2023-05-03T11:14:36 IST" duration-ms="20120" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testFireHose -->
+      </class> <!-- Ingestion.UserIngestion -->
+    </test> <!-- /Users/akhilsharma/IdeaProjects/PlatformAutomation -->
+  </suite> <!-- PlatformAutomation -->
+</testng-results>

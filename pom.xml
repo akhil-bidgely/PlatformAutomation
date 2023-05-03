@@ -30,15 +30,16 @@
     </build>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <java.version>20</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <rest-assured-version>5.3.0</rest-assured-version>
         <testng-version>7.0.0</testng-version>
         <jackson-databind-version>2.14.2</jackson-databind-version>
         <gson-version>2.10.1</gson-version>
         <aws-java-sdk-version>1.11.1000</aws-java-sdk-version>
-        <java.version>1.8</java.version>
+        <hadoop-version>3.3.0</hadoop-version>
     </properties>
 
         <dependencies>
@@ -134,6 +135,16 @@
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>2.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-aws</artifactId>
+                <version>${hadoop-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-sql_2.13</artifactId>
+                <version>3.4.0</version>
             </dependency>
 
 
