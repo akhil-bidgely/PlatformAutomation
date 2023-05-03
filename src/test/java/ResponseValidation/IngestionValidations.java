@@ -3,19 +3,25 @@ package ResponseValidation;
 import CommonUtils.Utils;
 import PojoClasses.MeterFilePOJO;
 import PojoClasses.UserFilePOJO;
+import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static Constants.Endpoints.GET_USER;
+import static Constants.PilotIDs.AMEREN_PILOT_ID;
+import static ServiceHelper.RestUtils.BASE_URL;
+
 public class IngestionValidations {
     SoftAssert softAssert=new SoftAssert();
-    public void validateUserDetails(Response response, UserFilePOJO userFilePOJO, String uuid, String timeZone,Map<String, String> executionVariables){
+    public void validateUserDetails(Response response, UserFilePOJO userFilePOJO, String uuid, String timeZone,Map<String, String> executionVariables, String AMEREN_PILOT_ID){
         JSONObject obj= new JSONObject(response.asString());
         JSONObject payload=obj.getJSONObject("payload");
 
@@ -23,13 +29,22 @@ public class IngestionValidations {
         Map<String,Object> expectedValueMap = new HashMap<>();
         expectedValueMap.put("uuid",payload.getString("uuid"));
         Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
+//        File schema = new File("src/test/resources/Ameren/AMI_E/SchemaFiles/userDetails.json");
+//        response.then().body(JsonSchemaValidator.matchesJsonSchema(schema));
 
         softAssert.assertEquals(uuid,payload.getString("uuid"),"Validation of UUID");
         softAssert.assertEquals(userFilePOJO.getFirst_name(),payload.getString("firstName"),"Validation of First Name");
         softAssert.assertEquals(userFilePOJO.getLast_name(),payload.getString("lastName"),"Validation of Last Name");
+        softAssert.assertEquals(userFilePOJO.getPartner_user_id(),payload.getString("partnerUserId"),"Validation of partner UserId");
+        softAssert.assertEquals(BASE_URL+GET_USER+uuid,payload.getString("userUrl"),"Validation of user URL");
+        softAssert.assertEquals(BASE_URL+GET_USER+uuid+"/endpoints",payload.getString("endPointsUrl"),"Validation of End Points URL");
+        softAssert.assertEquals(AMEREN_PILOT_ID,payload.getString("pilotId"),"Validation of Pilot ID");
+        softAssert.assertEquals("ROLE_USER",payload.getString("roleId"),"Validation of Role ID");
         softAssert.assertEquals("ENABLED",payload.getString("status"),"Validation of status");
-        softAssert.assertEquals(userFilePOJO.getEmail(),payload.getString("email"),"Validation of email");
         softAssert.assertEquals("OPT_OUT",payload.getString("notificationUserType"),"Validation of notificationUserType");
+        softAssert.assertEquals("support+"+uuid+"@bidgely.com",payload.getString("userName"),"Validation of User Name");
+        softAssert.assertEquals("OBTAINED",payload.getString("userConsentStatus"),"userConsentStatus");
+        softAssert.assertEquals(userFilePOJO.getEmail(),payload.getString("email"),"Validation of email");
 
         JSONObject homeAccounts=payload.getJSONObject("homeAccounts");
         softAssert.assertEquals(userFilePOJO.getAddress_1(),homeAccounts.getString("address"),"Validation of address line 1");
