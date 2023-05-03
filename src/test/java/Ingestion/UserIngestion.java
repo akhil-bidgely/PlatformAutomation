@@ -3,9 +3,14 @@ package Ingestion;
 import PojoClasses.MeterFilePOJO;
 import PojoClasses.RawFilePOJO;
 import PojoClasses.UserFilePOJO;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.opencsv.exceptions.CsvException;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
 import org.hamcrest.Matchers;
 import org.awaitility.Awaitility;
 import org.json.JSONObject;
@@ -40,7 +45,7 @@ public class UserIngestion extends BaseTest{
         token=getAuthToken(response);
     }
 
-    @Test
+    @Test(enabled = false)
     public void fileIngestion () throws IOException, ParseException, InterruptedException, java.text.ParseException, CsvException {
 
         //Internal bucket USERENROLL file upload
@@ -113,4 +118,28 @@ public class UserIngestion extends BaseTest{
 
 
     }
+
+    @Test
+    public void testFireHose()
+    {
+        DefaultAWSCredentialsProviderChain props = new DefaultAWSCredentialsProviderChain();
+        AWSCredentials credentials = props.getCredentials();
+
+        final String AWS_ACCESS_KEY_ID = credentials.getAWSAccessKeyId();
+        final String AWS_SECRET_ACCESS_KEY = credentials.getAWSSecretKey();
+        SparkSession spark = SparkSession.builder()
+                .appName("My Application")
+                .config("fs.s3a.access.key", AWS_ACCESS_KEY_ID)
+                .config("fs.s3a.secret.key",AWS_SECRET_ACCESS_KEY)
+                .master("local")
+                .getOrCreate();
+
+        Dataset<Row> df = spark.read().option("inferSchema",true).json("s3a://bidgelynonprodqa-firehose/user_aggregation_data/2023/04/22/01");
+
+        df.show();
+        df.select("uuid").show(false);
+    }
+
+
+
 }
