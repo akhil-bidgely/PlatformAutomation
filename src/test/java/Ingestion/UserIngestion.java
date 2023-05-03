@@ -45,7 +45,7 @@ public class UserIngestion extends BaseTest{
         token=getAuthToken(response);
     }
 
-    @Test(enabled = false)
+    @Test
     public void fileIngestion () throws IOException, ParseException, InterruptedException, java.text.ParseException, CsvException {
 
         //Internal bucket USERENROLL file upload
@@ -119,7 +119,7 @@ public class UserIngestion extends BaseTest{
 
     }
 
-    @Test
+    @Test(enabled = false)
     public void testFireHose()
     {
         DefaultAWSCredentialsProviderChain props = new DefaultAWSCredentialsProviderChain();
