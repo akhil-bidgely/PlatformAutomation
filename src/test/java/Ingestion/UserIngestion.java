@@ -60,7 +60,9 @@ public class UserIngestion extends BaseTest{
             }
         });*/
 
-        Thread.sleep(5000);
+        Thread.sleep(10000);
+//        Awaitility.await().atMost(10,TimeUnit.SECONDS).pollInterval(2, TimeUnit.SECONDS)
+//                .until(() ->restUtils.getPartnerUserId(token,executionVariables).getStatusCode() == 200);
         Response partnerUserIdResponse= restUtils.getPartnerUserId(token,executionVariables);
         uuid=JsonUtils.getUuidFromPremiseId(partnerUserIdResponse);
 
@@ -72,7 +74,7 @@ public class UserIngestion extends BaseTest{
         Response usersApiResponse= restUtils.getUsers(uuid,token);
 
         //Validating User Details API response
-        ingestionValidations.validateUserDetails(usersApiResponse,userfileInfo,uuid,timeZone,executionVariables);
+        ingestionValidations.validateUserDetails(usersApiResponse,userfileInfo,uuid,timeZone,executionVariables,AMEREN_PILOT_ID);
 
         //Internal bucket METERENROLL file upload
         String meterTempFilePath=processRawFile(METER_ENROLLMENT_AMI_E,executionVariables,null,meterFilePOJO);

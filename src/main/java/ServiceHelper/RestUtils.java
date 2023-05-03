@@ -43,11 +43,11 @@ public class RestUtils {
     {
 
         RequestSpecification given = RestAssured.given();
-        Response response = given.log().all().pathParam("pilotId",pilotId)
+        Response response = given.pathParam("pilotId",pilotId)
                 .baseUri(BASE_URL).basePath(GET_PILOT_CONFIGS)
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token).log().all()
+                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token)
+                .log().all()
                 .get();
-        response.prettyPrint();
         printRequestLogInReport(given, "Pilot Config API");
         printResponseLogInReport(response);
         return response;
@@ -63,7 +63,6 @@ public class RestUtils {
                 .get();
         printRequestLogInReport(given, "Pilot Config API");
         printResponseLogInReport(response);
-        System.out.println("Response :"+ response.prettyPrint());
 
         return response;
 
