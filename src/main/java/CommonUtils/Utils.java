@@ -5,6 +5,8 @@ import PojoClasses.MeterFilePOJO;
 import PojoClasses.UserFilePOJO;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -12,6 +14,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.aventstack.extentreports.markuputils.MarkupHelper;
 import io.restassured.response.Response;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
 import reporting.ExtentReportManager;
 import reporting.Setup;
 import org.apache.commons.io.FilenameUtils;
@@ -190,4 +195,19 @@ public class Utils {
 
         return map;
     }
+
+    /**
+     * this method will read the data from s3 using Spark session
+     * @param bucketName
+     * @param key
+     * @return
+     */
+    public static  Dataset<Row> getS3FirehoseData(SparkSession spark,String bucketName, String key)
+    {
+
+        String path="s3a://"+bucketName+key;
+        Dataset<Row> df = spark.read().option("inferSchema",true).json(path);
+        return df;
+    }
+
 }
