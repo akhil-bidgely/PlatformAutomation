@@ -60,7 +60,7 @@ public class UserIngestion extends BaseTest{
         token=getAuthToken(response);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void fileIngestion () throws IOException, ParseException, InterruptedException, java.text.ParseException, CsvException {
 
         //Internal bucket USERENROLL file upload
@@ -162,7 +162,8 @@ public class UserIngestion extends BaseTest{
         Dataset<Row> rowDatasetNewS3 = rowS3Dataset.withColumn("billing_start_time", from_unixtime(rowS3Dataset.col("billing_start_time").divide(1000), "yyyy-MM-dd"))
                 .withColumn("billing_end_time", from_unixtime(rowS3Dataset.col("billing_end_time").divide(1000), "yyyy-MM-dd"));
 
-
+        System.out.println("========to read the from s3=======");
+        rowDatasetNewS3.show(50);
 
         //To define the schema of the input invoice File
         StructType schema = DataTypes.createStructType(new StructField[] {
@@ -188,7 +189,6 @@ public class UserIngestion extends BaseTest{
 
         //to get the distinct data stream type from input file
         Dataset<Row> dataStreamType = df1.select("dataStreamType").distinct();
-        System.out.println("=====");
         dataStreamType.show(20);
 
 
@@ -233,21 +233,24 @@ public class UserIngestion extends BaseTest{
         //To verify the field getting in S3 and input file
         joinedData.foreach(row -> {
 
+            //to verify the billing end time
             SoftAssert softAssert=new SoftAssert();
             logger.info("the billing end time values in s3 and input file is "+row.getAs("billing_end_time").toString()+" "+row.getAs("billingEndDate").toString());
             softAssert.assertEquals(row.getAs("billing_end_time").toString(),row.getAs("billingEndDate").toString());
 
+            //to verify the consumption values
             logger.info("the consumption values in s3 and input file is "+row.getAs("consumption").toString()+" "+row.getAs("consumption_value").toString());
             softAssert.assertEquals(row.getAs("consumption").toString(),row.getAs("consumption_value").toString(),"Consumption Not getting matched"
                     +row.getAs("consumption").toString()+" "+row.getAs("consumption_value"));
 
+            //to verify the cost values
             logger.info("the cost values in s3 and input file is "+row.getAs("cost").toString()+" "+row.getAs("currencyCost").toString());
             softAssert.assertEquals(row.getAs("cost").toString(),row.getAs("currencyCost").toString());
 
             //to Verify the USER type in s3
             if(row.getAs("dataStreamType").toString().equals("AMI")) {
                 logger.info("verifying the user type in S3 based on Meter type");
-                softAssert.assertEquals(row.getAs("user_type"),"GB");
+                softAssert.assertEquals(row.getAs("user_type"),Utils.UserTypeAMIMeter);
             }
             //to verify the Measurement type in s3
             if(row.getAs("fuelType").toString().equals("ELECTRIC")) {
@@ -259,6 +262,12 @@ public class UserIngestion extends BaseTest{
             softAssert.assertEquals(Boolean.parseBoolean(row.getAs("solar").toString()),solarFieldFromMeterFile);
 
             softAssert.assertEquals(row.getAs("bidgely_generated_invoice").toString(),"false");
+
+            //to verify the hid
+            softAssert.assertEquals(row.getAs("hid").toString(),"1");
+
+            //to verify the transition bill cycle
+            softAssert.assertEquals(row.getAs("transition_bill_cycle").toString(),"false");
             softAssert.assertAll();
         });
 

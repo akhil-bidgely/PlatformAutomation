@@ -27,6 +27,11 @@ import java.util.*;
 
 public class Utils {
 
+
+    public static final String UserTypeAMIMeter="GB";
+    public static final String UserTypeAMRMeter="GB_Month";
+    public static final String UserTypeNSMMeter="NSM";
+
     public static void s3UploadFile(String filePath){
         Regions clientRegion = Regions.DEFAULT_REGION;
         String bucketName = "bidgely-amerenres-nonprodqa";
