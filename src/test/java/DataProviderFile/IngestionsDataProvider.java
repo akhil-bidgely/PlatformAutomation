@@ -1,11 +1,9 @@
-package DataProviderFile;
+package dataProviderFile;
 
 import org.testng.annotations.DataProvider;
 
-import java.util.Iterator;
-
-import static Constants.ConstantFile.AMI_E_GWS;
-import static Constants.FilePaths.*;
+import static constants.ConstantFile.AMI_E_GWS;
+import static constants.FilePaths.*;
 
 public class IngestionsDataProvider {
 
