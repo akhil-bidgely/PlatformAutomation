@@ -1,6 +1,7 @@
 package ServiceHelper;
 
 
+import PojoClasses.MeterFilePOJO;
 import io.restassured.http.ContentType;
 import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.SpecificationQuerier;
@@ -43,9 +44,9 @@ public class RestUtils {
     {
 
         RequestSpecification given = RestAssured.given();
-        Response response = given.pathParam("pilotId",pilotId)
+        Response response = given.auth().oauth2(token).pathParam("pilotId",pilotId)
                 .baseUri(BASE_URL).basePath(GET_PILOT_CONFIGS)
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token)
+                .contentType(ContentType.JSON)
                 .log().all()
                 .get();
         printRequestLogInReport(given, "Pilot Config API");
@@ -58,22 +59,21 @@ public class RestUtils {
     {
 
         RequestSpecification given = RestAssured.given();
-        Response response = given.baseUri(BASE_URL).pathParam("uuid",uuid).basePath(GET_USER)
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token).log().all()
+        Response response = given.auth().oauth2(token).baseUri(BASE_URL).pathParam("uuid",uuid).basePath(GET_USER)
+                .contentType(ContentType.JSON).log().all()
                 .get();
-        printRequestLogInReport(given, "Pilot Config API");
+        printRequestLogInReport(given, "Pilot User Details API");
         printResponseLogInReport(response);
 
         return response;
 
     }
 
-    public Response getMetersApi(String uuid, String token)
+    public Response getMetersApi(String uuid, String token, int gws)
     {
-
         RequestSpecification given = RestAssured.given();
-        Response response = given.baseUri(BASE_URL).basePath(GET_METERS).pathParam("uuid",uuid)
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token).log().all()
+        Response response = given.auth().oauth2(token).baseUri(BASE_URL).basePath(GET_METERS).pathParam("uuid",uuid).pathParam("gws",gws)
+                .contentType(ContentType.JSON).log().all()
                 .get();
 
         printRequestLogInReport(given, "Get Meters API");
@@ -82,14 +82,21 @@ public class RestUtils {
 
     }
 
-    public Response getGbJsonApi(String uuid, String token, String t1)
+    public Response getGbJsonApi(String uuid, String token, String t1, String scenario, int gws)
     {
-
+//        int gws;
+//        if(scenario.equals("AMI_E")){
+//            gws=2;
+//        }else if(scenario.equals("AMR_E")){
+//            gws=3;
+//        }else {
+//            gws=0;
+//        }
         RequestSpecification given = RestAssured.given();
-        Response response = given.baseUri(BASE_URL).basePath(GB_JSON).pathParam("uuid",uuid)
+        Response response = given.auth().oauth2(token).baseUri(BASE_URL).basePath(GB_JSON).pathParam("uuid",uuid).pathParam("gws",gws)
                 .queryParam("t0","1422776400")
                 .queryParam("t1",t1)
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token).log().all()
+                .contentType(ContentType.JSON)
                 .get();
         printRequestLogInReport(given, "GB.json API");
         printResponseLogInReport(response);
@@ -101,8 +108,8 @@ public class RestUtils {
     public Response getLabelTimeStamp(String uuid, String token)
     {
         RequestSpecification given = RestAssured.given();
-        Response response = given.baseUri(BASE_URL).basePath(LABEL_TIMESTAMP).pathParam("uuid",uuid)
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token).log().all()
+        Response response = given.auth().oauth2(token).baseUri(BASE_URL).basePath(LABEL_TIMESTAMP).pathParam("uuid",uuid)
+                .contentType(ContentType.JSON).log().all()
                 .get();
         System.out.println("Response :");
         printRequestLogInReport(given, "Label Timestamp API");
@@ -111,7 +118,7 @@ public class RestUtils {
         return response;
 
     }
-
+///  was testing awaitility method here , will be deleted later
 //    public Response getPartnerUserId(String token, Map<String, String> executionVariables) throws InterruptedException {
 //
 ////        RequestSpecification given = RestAssured.given();
@@ -145,8 +152,8 @@ public class RestUtils {
     public Response getPartnerUserId(String token, Map<String, String> executionVariables)
     {
         RequestSpecification given = RestAssured.given();
-        Response response = given.baseUri(BASE_URL).basePath(PARTNER_USERID).queryParam("partnerUserId",executionVariables.get("partnerUserId"))
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token).log().all()
+        Response response = given.auth().oauth2(token).baseUri(BASE_URL).basePath(PARTNER_USERID).queryParam("partnerUserId",executionVariables.get("partnerUserId"))
+                .contentType(ContentType.JSON).log().all()
                 .get();
         printRequestLogInReport(given, "Partner User Id API");
         printResponseLogInReport(response);
@@ -156,11 +163,24 @@ public class RestUtils {
     public Response getGbDisaggResp(String token, String partnerUserId)
     {
         RequestSpecification given = RestAssured.given();
-        Response response = given.baseUri(BASE_URL).basePath(PARTNER_USERID).queryParam("partnerUserId",partnerUserId)
-                .contentType(ContentType.JSON).header("Authorization", "Bearer" + token).log().all()
+        Response response = given.auth().oauth2(token).baseUri(BASE_URL).basePath(PARTNER_USERID).queryParam("partnerUserId",partnerUserId)
+                .contentType(ContentType.JSON).log().all()
                 .get();
         System.out.println("Response :"+ response.prettyPrint());
         printRequestLogInReport(given, "Partner User Id API");
+        printResponseLogInReport(response);
+        return response;
+    }
+
+    public Response getUtilityData(String uuid,String token, String t1)
+    {
+        RequestSpecification given = RestAssured.given();
+        Response response = given.auth().oauth2(token).log().all().baseUri(BASE_URL).basePath(UTILITY_DATA)
+                .pathParam("uuid",uuid)
+                .queryParam("t0","1422776400").queryParam("t1",t1)
+                .contentType(ContentType.JSON)
+                .get();
+        printRequestLogInReport(given, "Utility Data API");
         printResponseLogInReport(response);
         return response;
     }

@@ -1,6 +1,7 @@
 package CommonUtils;
 
 import PojoClasses.AssertionKeys;
+import PojoClasses.InvoicePOJO;
 import PojoClasses.MeterFilePOJO;
 import PojoClasses.UserFilePOJO;
 import com.amazonaws.AmazonServiceException;
@@ -10,6 +11,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.markuputils.MarkupHelper;
 import io.restassured.response.Response;
 import reporting.ExtentReportManager;
@@ -18,7 +20,13 @@ import org.apache.commons.io.FilenameUtils;
 
 
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static reporting.Setup.parentExtent;
 
 public class Utils {
 
@@ -77,10 +85,10 @@ public class Utils {
             if(actualValue.isPresent()){
                 Object value = actualValue.get();
                 if(value.equals(expectedValuesMap.get(jsonPath)))
-                    actualValuesMap.add(new AssertionKeys(jsonPath, expectedValuesMap.get(jsonPath),value,"Matched"));
+                    actualValuesMap.add(new AssertionKeys("Validating "+jsonPath.substring(jsonPath.lastIndexOf('.') + 1), expectedValuesMap.get(jsonPath),value,"Matched"));
                 else {
                     allMatched=false;
-                    actualValuesMap.add(new AssertionKeys(jsonPath, expectedValuesMap.get(jsonPath), value, "Not Matched"));
+                    actualValuesMap.add(new AssertionKeys("Validating "+jsonPath.substring(jsonPath.lastIndexOf('.') + 1), expectedValuesMap.get(jsonPath), value, "Not Matched"));
                 }
             }else {
                 allMatched = false;
@@ -98,10 +106,10 @@ public class Utils {
     }
 
 
-    public static String processRawFile(String fileToUpdate, Map<String,String> executionVariables, UserFilePOJO userfileInfo, MeterFilePOJO meterFilePOJO) throws IOException {
+    public static String processFile(String fileToUpdate, Map<String,String> executionVariables, UserFilePOJO userFilePOJO, MeterFilePOJO meterFilePOJO, String dataStreamId) throws IOException {
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader(new File(fileToUpdate)));
+            BufferedReader br = new BufferedReader(new FileReader(fileToUpdate));
             String line = br.readLine();
             String[] fileParam = line.split("\\|", 5);
 
@@ -113,32 +121,41 @@ public class Utils {
             System.out.println(updatedFile.getAbsolutePath());
             StringBuilder updatedContext = new StringBuilder();
             for (int i = 0; i < fileParam.length - 1; i++) {
+                int k=0;
                 while (line != null) {
+                    long dataStreamIdTemp=Long.valueOf(executionVariables.get("dataStreamId"))+k;
+                    String[] fileParamTemp = line.split("\\|", 5);
                     String updatedLine = "";
                     if(fileNameToUpdate.contains("USERENROLL")){
-                        updatedLine = line.replace(fileParam[0], executionVariables.get("customerId")).replace(fileParam[1], executionVariables.get("partnerUserId")).replace(fileParam[2],executionVariables.get("premiseId"));
+                        updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1]
+                                , executionVariables.get("partnerUserId")).replace(fileParamTemp[2],executionVariables.get("premiseId"));
                         String[] updatedLineArr = updatedLine.split("\\|");
 
-                        userfileInfo.setEmail(updatedLineArr[4]);
-                        userfileInfo.setFirst_name(updatedLineArr[5]);
-                        userfileInfo.setLast_name(updatedLineArr[6]);
-                        userfileInfo.setAddress_1(updatedLineArr[7]);
-                        userfileInfo.setCity(updatedLineArr[11]);
-                        userfileInfo.setState(updatedLineArr[12]);
-                        userfileInfo.setPostal_code(updatedLineArr[13]);
+                        userFilePOJO.setEmail(updatedLineArr[4]);
+                        userFilePOJO.setFirst_name(updatedLineArr[5]);
+                        userFilePOJO.setLast_name(updatedLineArr[6]);
+                        userFilePOJO.setAddress_1(updatedLineArr[7]);
+                        userFilePOJO.setCity(updatedLineArr[11]);
+                        userFilePOJO.setState(updatedLineArr[12]);
+                        userFilePOJO.setPostal_code(updatedLineArr[13]);
 
-                    }else {
-                        updatedLine = line.replace(fileParam[0], executionVariables.get("customerId")).replace(fileParam[1], executionVariables.get("partnerUserId")).replace(fileParam[2],executionVariables.get("premiseId"))
-                                .replace(fileParam[3],executionVariables.get("dataStreamId"));
+                    } else if (fileNameToUpdate.contains("METER")) {
+                        updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
+                                .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],dataStreamId);
 
-                        if(fileNameToUpdate.contains("METER")){
-                            String[] updatedLineArr = updatedLine.split("\\|");
-                            meterFilePOJO.setService_type(updatedLineArr[4]);
-                            meterFilePOJO.setMeter_type(updatedLineArr[12]);
-                        }
+                        updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
+                                .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],String.valueOf(dataStreamIdTemp));
+
+                        String[] updatedLineArr = updatedLine.split("\\|");
+                        meterFilePOJO.setService_type(updatedLineArr[4]);
+                        meterFilePOJO.setMeter_type(updatedLineArr[12]);
+                    } else {
+                        updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
+                                .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],dataStreamId);
                     }
                     updatedContext.append(updatedLine + System.lineSeparator());
                     line = br.readLine();
+                    k++;
                 }
             }
 
@@ -162,16 +179,16 @@ public class Utils {
 
         try {
             LineNumberReader lnr = new LineNumberReader(new FileReader(fileToUpdate));
-            long lines=0;
+            long linesNo=0;
             int[] linenos=new int[2];
             Random random= new Random();
             linenos[0]=random.nextInt(1000);
             linenos[1]=random.nextInt(1000);
             while (lnr.readLine() != null) {
-                lines = lnr.getLineNumber();
+                linesNo = lnr.getLineNumber();
                 for(int line:linenos){
-                    if(lines == line){
-                        timeStampConsumption.putAll(getTS(lnr.readLine()));
+                    if(linesNo == line){
+                        timeStampConsumption.putAll(getTimeStamp(lnr.readLine()));
                     }
                 }
             }
@@ -183,11 +200,88 @@ public class Utils {
 
     }
 
-    public static Map<String,String> getTS(String s){
+    public static Map<String,String> getTimeStamp(String s){
         Map<String,String> map=new HashMap<>();
         String[] fileParam = s.split("\\|", 7);
         map.put(fileParam[4],fileParam[5]);
 
         return map;
+    }
+
+    public static Map<String,Map<String,Map<String,String>>> getTimeStampsInvoiceData(String filePath) throws IOException {
+        Map<String,Map<String,Map<String,String>>> timeStampInvoiceCost = new HashMap<>();
+
+        long lines = countNoOfLines(filePath);
+        try {
+            LineNumberReader lnr = new LineNumberReader(new FileReader(filePath));
+            long rowNo=0;
+            Long[] randomRowNoArray=new Long[2];
+            Random random= new Random();
+
+            for(int i=0;i<2;i++){
+                randomRowNoArray[i] = random.nextLong(0, lines/5) * 5;  //getting random rows in multiple of 5
+            }
+
+            while (lnr.readLine() != null) {
+                rowNo = lnr.getLineNumber();
+
+                for(long row:randomRowNoArray){
+                    Map<String,Map<String,Map<String,String>>> parentMap = new HashMap<>();
+                    if(rowNo == row){
+                        Map<String,Map<String,String>> timeStampBasedMap = new HashMap<>();
+                        for(int i=0;i<5;i++){
+                            Map<String,String> chargeTypeBasedMap=getInvoiceDataForTimeStamp(lnr.readLine());
+                            timeStampBasedMap.put(chargeTypeBasedMap.get("charge_type")+chargeTypeBasedMap.get("charge_name"),chargeTypeBasedMap);
+                        }
+                        Map<String,String> m=timeStampBasedMap.get("TOTAL");
+                        parentMap.put(m.get("bc_start_date"),timeStampBasedMap);
+
+                    }
+                    timeStampInvoiceCost.putAll(parentMap);
+                }
+
+            }
+            return timeStampInvoiceCost;
+
+        } catch (IOException | ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Map<String,String> getInvoiceDataForTimeStamp(String line) throws ParseException {
+        Map<String,String> cMap= new HashMap<>();
+        String[] fileParam = line.split("\\|");
+        cMap.put("bc_start_date", String.valueOf(getEpochTimeFromDate(fileParam[6])));
+        parentExtent.info("bc_start_date in sheet :"+fileParam[6]);
+        parentExtent.info("bc_start_date converted:"+String.valueOf(getEpochTimeFromDate(fileParam[6])));
+        cMap.put("bc_end_date", String.valueOf(getEpochTimeFromDate(fileParam[7])));
+        parentExtent.info("bc_end_date in sheet :"+fileParam[7]);
+        parentExtent.info("bc_end_date converted :"+String.valueOf(getEpochTimeFromDate(fileParam[7])));
+        cMap.put("charge_name", fileParam[9]);
+        cMap.put("charge_type", fileParam[10]);
+        cMap.put("kWh_Consumption", fileParam[11]);
+        cMap.put("dollar_cost", fileParam[12]);
+        cMap.put("meter_type", fileParam[13]);
+
+        return cMap;
+    }
+
+    public static long getEpochTimeFromDate(String bc_date) throws ParseException {
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        sdf.setTimeZone(TimeZone.getTimeZone("CST"));
+        final Long millis = sdf.parse(bc_date).getTime() / 1000;
+        return millis;
+    }
+
+    public static long countNoOfLines(String fileName) {
+        File file = new File(fileName);
+        long lines = 0;
+        try (LineNumberReader lnr = new LineNumberReader(new FileReader(file))) {
+            while (lnr.readLine() != null) ;
+            lines = lnr.getLineNumber();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return lines;
     }
 }

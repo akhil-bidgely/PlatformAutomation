@@ -46,7 +46,7 @@ public class ExtentReportManager {
         Setup.extentTest.get().pass(MarkupHelper.createLabel(log, ExtentColor.GREEN));
     }
     public static void  logHeadings(String log){
-        Setup.extentTest.get().pass(MarkupHelper.createLabel(log, ExtentColor.CYAN));
+        Setup.extentTest.get().info(MarkupHelper.createLabel(log, ExtentColor.CYAN));
     }
     public static void  logFailureDetails(String log){
         Setup.extentTest.get().fail(MarkupHelper.createLabel(log, ExtentColor.RED));
