@@ -6,7 +6,7 @@
     </listeners>
     <test verbose="2" preserve-order="true" name="/Users/akhilsharma/IdeaProjects/PlatformAutomation">
         <classes>
-            <class name="Ingestion.UserIngestion"/>
+            <class name="tests.Ingestion"/>
         </classes>
     </test>
 </suite>
