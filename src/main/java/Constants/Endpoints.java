@@ -1,4 +1,4 @@
-package Constants;
+package constants;
 
 public class Endpoints {
     public static final  String GET_USER="v2.0/users/{uuid}";

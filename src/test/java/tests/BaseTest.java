@@ -1,11 +1,11 @@
 package tests;
 
-import CommonUtils.UserFileAmi;
-import DataProviderFile.IngestionsDataProvider;
-import PojoClasses.MeterFilePOJO;
-import PojoClasses.UserFilePOJO;
-import ResponseValidation.IngestionValidations;
-import ServiceHelper.RestUtils;
+import commonUtils.UserFileAmi;
+import dataProviderFile.IngestionsDataProvider;
+import pojoClasses.MeterFilePOJO;
+import pojoClasses.UserFilePOJO;
+import responseValidation.IngestionValidations;
+import serviceHelper.RestUtils;
 
 public class BaseTest {
     IngestionValidations ingestionValidations;

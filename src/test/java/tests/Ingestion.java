@@ -1,15 +1,15 @@
 package tests;
 
-import DataProviderFile.IngestionsDataProvider;
-import PojoClasses.UserFilePOJO;
+import dataProviderFile.IngestionsDataProvider;
+import pojoClasses.UserFilePOJO;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import io.restassured.response.Response;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import CommonUtils.JsonUtils;
-import CommonUtils.Utils;
+import commonUtils.JsonUtils;
+import commonUtils.Utils;
 import org.testng.annotations.*;
 
 import java.io.IOException;
@@ -17,9 +17,9 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
-import static CommonUtils.JsonUtils.getAuthToken;
-import static CommonUtils.Utils.*;
-import static Constants.ConstantFile.AMEREN_PILOT_ID;
+import static commonUtils.JsonUtils.getAuthToken;
+import static commonUtils.Utils.*;
+import static constants.ConstantFile.AMEREN_PILOT_ID;
 
 public class Ingestion extends BaseTest{
     String token= "";
@@ -168,8 +168,11 @@ public class Ingestion extends BaseTest{
         Response utilityDataResponse= restUtils.getUtilityData(userFilePOJO.getUuid(),token,t1);
         Map<String, Map<String, Map<String,String>>> mapTimestampCostData = new HashMap<>();
         mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath1));
+        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
+        mapTimestampCostData.clear();
         mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath2));
         ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
+
 
     }
 

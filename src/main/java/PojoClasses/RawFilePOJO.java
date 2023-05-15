@@ -1,4 +1,4 @@
-package PojoClasses;
+package pojoClasses;
 
 public class RawFilePOJO {
     private String customer_id;

@@ -1,9 +1,7 @@
-package ResponseValidation;
+package responseValidation;
 
-import CommonUtils.Utils;
-import PojoClasses.InvoicePOJO;
-import PojoClasses.MeterFilePOJO;
-import PojoClasses.UserFilePOJO;
+import commonUtils.Utils;
+import pojoClasses.*;
 import io.restassured.response.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,8 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static Constants.Endpoints.GET_USER;
-import static ServiceHelper.RestUtils.BASE_URL;
+import static constants.Endpoints.GET_USER;
+import static serviceHelper.RestUtils.BASE_URL;
 import static reporting.Setup.parentExtent;
 
 public class IngestionValidations {
