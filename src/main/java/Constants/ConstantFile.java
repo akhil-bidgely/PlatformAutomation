@@ -1,4 +1,4 @@
-package Constants;
+package constants;
 
 public class ConstantFile {
     public static final String AMEREN_PILOT_ID =  "10057";

@@ -1,4 +1,4 @@
-package Constants;
+package constants;
 
 public class FilePaths {
     public static String userdir=System.getProperty("user.dir");

@@ -1,7 +1,6 @@
-package CommonUtils;
+package commonUtils;
 
-import PojoClasses.MeterFilePOJO;
-import PojoClasses.UserFilePOJO;
+import pojoClasses.*;
 import com.amazonaws.services.dynamodbv2.xspec.S;
 
 import java.io.File;

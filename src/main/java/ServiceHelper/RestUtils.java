@@ -1,7 +1,7 @@
-package ServiceHelper;
+package serviceHelper;
 
 
-import PojoClasses.MeterFilePOJO;
+import pojoClasses.MeterFilePOJO;
 import io.restassured.http.ContentType;
 import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.SpecificationQuerier;
@@ -10,12 +10,12 @@ import reporting.ExtentReportManager;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import Constants.ConfigManagar;
+import constants.ConfigManagar;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static Constants.Endpoints.*;
+import static constants.Endpoints.*;
 
 public class RestUtils {
     public static final String BASE_URL= ConfigManagar.getConfig("baseUri");

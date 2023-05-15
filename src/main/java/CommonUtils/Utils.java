@@ -1,9 +1,6 @@
-package CommonUtils;
+package commonUtils;
 
-import PojoClasses.AssertionKeys;
-import PojoClasses.InvoicePOJO;
-import PojoClasses.MeterFilePOJO;
-import PojoClasses.UserFilePOJO;
+import pojoClasses.*;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.regions.Regions;
