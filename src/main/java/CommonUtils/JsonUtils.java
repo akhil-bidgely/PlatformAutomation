@@ -1,4 +1,4 @@
-package CommonUtils;
+package commonUtils;
 
 import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.fasterxml.jackson.core.type.TypeReference;
