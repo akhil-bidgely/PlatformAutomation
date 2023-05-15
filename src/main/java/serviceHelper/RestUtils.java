@@ -19,7 +19,7 @@ import static constants.Endpoints.*;
 
 public class RestUtils {
     public static final String BASE_URL= ConfigManagar.getConfig("baseUri");
-
+    public static final String REDSHIFT_URL=ConfigManagar.getConfig("redShiftUrl");
     public void printRequestLogInReport(RequestSpecification requestSpecification, String APIName){
         QueryableRequestSpecification queryableRequestSpecification= SpecificationQuerier.query(requestSpecification);
         ExtentReportManager.logHeadings("<b>Calling API : </b>" + APIName);
@@ -199,5 +199,17 @@ public class RestUtils {
 //        ExtentReportManager.logInfoDetails("<b>Endpoint : </b>" +given.get().body().prettyPrint());
         return response;
 
+    }
+
+    public Response postRedshiftQuery(String query)
+    {
+        RequestSpecification given = RestAssured.given();
+        given.baseUri(REDSHIFT_URL);
+        JSONObject requestParams = new JSONObject();
+        requestParams.put("statement", query);
+        given.header("Content-Type", "application/json");
+        given.body(requestParams.toString());
+        Response post = given.post();
+        return post;
     }
 }

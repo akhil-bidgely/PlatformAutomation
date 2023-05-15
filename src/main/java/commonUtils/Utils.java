@@ -1,5 +1,11 @@
 package commonUtils;
 
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import pojoClasses.*;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
@@ -280,5 +286,96 @@ public class Utils {
             e.printStackTrace();
         }
         return lines;
+    }
+
+    /**
+     * this method will read the data from s3 using Spark session
+     * @param bucketName
+     * @param key
+     * @return
+     */
+    public static Dataset<Row> getS3FirehoseData(SparkSession spark, String bucketName, String key)
+    {
+
+        String path="s3a://"+bucketName+key;
+        Dataset<Row> df = spark.read().option("inferSchema",true).json(path);
+        return df;
+    }
+
+    /**
+     *
+     * To get the today date in the Format yyyy/MM/dd format
+     */
+    public static  String getTodayDate()
+    {
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        return  today.format(formatter);
+    }
+
+    /**
+     * To get the current UTC hour based on local time
+     */
+    public static String getUtcTime()
+    {
+        LocalDateTime utcTime = LocalDateTime.now(ZoneOffset.UTC);
+
+        // Format the hour with leading zero if less than 9
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
+        String formattedHour = utcTime.format(formatter);
+
+        // Check if hour is less than 9, prepend a zero
+        if (Integer.parseInt(formattedHour) < 9) {
+            formattedHour = "0" + formattedHour;
+        }
+        return formattedHour;
+
+    }
+
+    public static Dataset<Row> readInvoiceInputFile(SparkSession spark, String filePath)
+    {
+        //To define the schema of the input invoice File
+        StructType schema = DataTypes.createStructType(new StructField[] {
+                DataTypes.createStructField("customerId", DataTypes.StringType, true),
+                DataTypes.createStructField("partnerId", DataTypes.StringType, true),
+                DataTypes.createStructField("premiseId", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamId", DataTypes.StringType, true),
+                DataTypes.createStructField("fuelType", DataTypes.StringType, true),
+                DataTypes.createStructField("meterCycleCode", DataTypes.StringType, true),
+                DataTypes.createStructField("billingStartDate", DataTypes.StringType, true),
+                DataTypes.createStructField("billingEndDate", DataTypes.StringType, true),
+                DataTypes.createStructField("billingDuration", DataTypes.StringType, true),
+                DataTypes.createStructField("chargeName", DataTypes.StringType, true),
+                DataTypes.createStructField("chargeType", DataTypes.StringType, true),
+                DataTypes.createStructField("consumption", DataTypes.StringType, true),
+                DataTypes.createStructField("currencyCost", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamType", DataTypes.StringType, true)
+        });
+
+
+        Dataset<Row> df1=spark.read().format("csv").schema(schema) .option("sep","|").load(filePath);
+        return df1;
+    }
+
+    public static Dataset<Row> readMeterInputFile(SparkSession spark,String filePath)
+    {
+        StructType schemaMeter = DataTypes.createStructType(new StructField[] {
+                DataTypes.createStructField("customerId", DataTypes.StringType, true),
+                DataTypes.createStructField("partnerId", DataTypes.StringType, true),
+                DataTypes.createStructField("premiseId", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamId", DataTypes.StringType, true),
+                DataTypes.createStructField("fuelType", DataTypes.StringType, true),
+                DataTypes.createStructField("serviceAgreementStDate", DataTypes.StringType, true),
+                DataTypes.createStructField("serviceAgreementEnDate", DataTypes.StringType, true),
+                DataTypes.createStructField("ratePlanId", DataTypes.StringType, true),
+                DataTypes.createStructField("ratePlanEffectiveDate", DataTypes.StringType, true),
+                DataTypes.createStructField("billingCycleCode", DataTypes.StringType, true),
+                DataTypes.createStructField("billingCycleEffectiveDate", DataTypes.StringType, true),
+                DataTypes.createStructField("solar", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamType", DataTypes.StringType, true),
+                DataTypes.createStructField("label", DataTypes.StringType, true)
+        });
+        Dataset<Row> df2=spark.read().format("csv").schema(schemaMeter).option("sep","|").load(filePath);
+        return df2;
     }
 }
