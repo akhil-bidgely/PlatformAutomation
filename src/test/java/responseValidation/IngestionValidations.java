@@ -250,18 +250,18 @@ public class IngestionValidations {
                 //for consumption value verification
                 Double value1 = Double.parseDouble(row.getAs("consumption").toString());
                 Double value2 = Double.parseDouble(jsonNode.get("consumption_value").toString().replaceAll("\"",""));
-                BigDecimal decimal1 = BigDecimal.valueOf(value1).setScale(1, BigDecimal.ROUND_HALF_UP);
-                BigDecimal decimal2 = BigDecimal.valueOf(value2).setScale(1, BigDecimal.ROUND_HALF_UP);
-                logger.info(decimal1 +" "+decimal2);
-                Assert.assertEquals(decimal1,decimal2);
+                BigDecimal consumtionValueInput = BigDecimal.valueOf(value1).setScale(1, BigDecimal.ROUND_HALF_UP);
+                BigDecimal consumtionValueRedshift = BigDecimal.valueOf(value2).setScale(1, BigDecimal.ROUND_HALF_UP);
+                logger.info(consumtionValueInput +" "+consumtionValueRedshift);
+                Assert.assertEquals(consumtionValueInput,consumtionValueRedshift);
 
                 //for currency cost verification
                 Double val1 = Double.parseDouble(row.getAs("currencyCost").toString());
                 Double val2 = Double.parseDouble(jsonNode.get("cost").toString().replaceAll("\"",""));
-                decimal1 = BigDecimal.valueOf(val1).setScale(2, BigDecimal.ROUND_DOWN);
-                decimal2 = BigDecimal.valueOf(val2).setScale(2, BigDecimal.ROUND_DOWN);
-                Assert.assertEquals(decimal1,decimal2);
-                logger.info(decimal1+"  "+decimal2);
+                BigDecimal costValueInput = BigDecimal.valueOf(val1).setScale(2, BigDecimal.ROUND_DOWN);
+                BigDecimal costValueRedshift = BigDecimal.valueOf(val2).setScale(2, BigDecimal.ROUND_DOWN);
+                Assert.assertEquals(costValueInput,costValueRedshift);
+                logger.info(costValueInput+"  "+costValueRedshift);
 
                 //for user type verification in redshift
                 //to Verify the USER type in s3

@@ -69,21 +69,7 @@ public class Ingestion extends BaseTest{
                 .config("fs.s3a.secret.key",AWS_SECRET_ACCESS_KEY)
                 .master("local")
                 .getOrCreate();
-        //DP-1757 as data greater than currentDate-395 Days will be considered for UtilityData firehose streaming
-        LocalDate currentDate = LocalDate.now();
-        LocalDate dateBefore395Days = currentDate.minusDays(395);
 
-
-        //to process the input invoice file
-        String filePath= FilePaths.INVOICE_AMI_E_PATH;
-        Dataset<Row> dfInvoiceFile = Utils.readInvoiceInputFile(spark, filePath);
-        //to filter based on the billingStartDate and charge type is Total as in Firehose S3 we store only the charge Type Total
-        rowDatasetInvoiceFileTotal= dfInvoiceFile.filter(dfInvoiceFile.col("chargeType").equalTo("TOTAL")).filter((dfInvoiceFile.col("billingStartDate").geq(dateBefore395Days))).orderBy(dfInvoiceFile.col("billingStartDate"));
-
-        rowDatasetInvoiceFileTotal.show(100);
-        String filePath2=METER_ENROLLMENT_AMI_E_PATH;
-        //To define the schema of the input invoice File
-        dfMeterFile =Utils.readMeterInputFile(spark,filePath2);
     }
 
     @Test(alwaysRun = true, dataProvider = "singleMeterDP", dataProviderClass = IngestionsDataProvider.class,priority = 0)
@@ -235,7 +221,7 @@ public class Ingestion extends BaseTest{
     {
         //to compute date and format it in the path format
         //for e.g  /utility_billing_data_firehose/2023/05/09/09/
-
+        readInputFiles();
         String date=Utils.getTodayDate();
         String  utcHour=Utils.getUtcTime();
         String bucket= ConstantFile.CommonMetricsNonprodqaBucket;
@@ -323,6 +309,25 @@ public class Ingestion extends BaseTest{
         logger.info("Number of records in input file is  "+rowDatasetInvoiceFileTotal.count());
         logger.info("Number of records in Redshift file is   "+jsonArrayFromRedshift.size());
         Assert.assertEquals(jsonArrayFromRedshift.size(),rowDatasetInvoiceFileTotal.count());
+    }
+
+    private void readInputFiles()
+    {
+        //DP-1757 as data greater than currentDate-395 Days will be considered for UtilityData firehose streaming
+        LocalDate currentDate = LocalDate.now();
+        LocalDate dateBefore395Days = currentDate.minusDays(395);
+
+
+        //to process the input invoice file
+        String filePath= FilePaths.INVOICE_AMI_E_PATH;
+        Dataset<Row> dfInvoiceFile = Utils.readInvoiceInputFile(spark, filePath);
+        //to filter based on the billingStartDate and charge type is Total as in Firehose S3 we store only the charge Type Total
+        rowDatasetInvoiceFileTotal= dfInvoiceFile.filter(dfInvoiceFile.col("chargeType").equalTo("TOTAL")).filter((dfInvoiceFile.col("billingStartDate").geq(dateBefore395Days))).orderBy(dfInvoiceFile.col("billingStartDate"));
+
+        rowDatasetInvoiceFileTotal.show(100);
+        String filePath2=METER_ENROLLMENT_AMI_E_PATH;
+        //To define the schema of the input invoice File
+        dfMeterFile =Utils.readMeterInputFile(spark,filePath2);
     }
 
 
