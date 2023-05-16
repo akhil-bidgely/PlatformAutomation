@@ -1,5 +1,6 @@
 package commonUtils;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -20,6 +21,7 @@ import io.restassured.response.Response;
 import reporting.ExtentReportManager;
 import reporting.Setup;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.hadoop.fs.FileSystem;
 
 
 import java.io.*;
@@ -294,12 +296,25 @@ public class Utils {
      * @param key
      * @return
      */
-    public static Dataset<Row> getS3FirehoseData(SparkSession spark, String bucketName, String key)
+    public static Dataset<Row> getS3FirehoseData(SparkSession spark, String s3path)
     {
 
-        String path="s3a://"+bucketName+key;
-        Dataset<Row> df = spark.read().option("inferSchema",true).json(path);
+        // Check if the path exists
+        Dataset<Row> df = spark.read().option("inferSchema",true).json(s3path);
         return df;
+    }
+
+    public static boolean isS3PathExists(String s3Path, SparkSession spark) {
+        try {
+            // Get the Hadoop FileSystem
+            FileSystem fs = FileSystem.get(spark.sparkContext().hadoopConfiguration());
+
+            // Check if the path exists
+            return fs.exists(new Path(s3Path));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -323,11 +338,6 @@ public class Utils {
         // Format the hour with leading zero if less than 9
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
         String formattedHour = utcTime.format(formatter);
-
-        // Check if hour is less than 9, prepend a zero
-        if (Integer.parseInt(formattedHour) < 9) {
-            formattedHour = "0" + formattedHour;
-        }
         return formattedHour;
 
     }

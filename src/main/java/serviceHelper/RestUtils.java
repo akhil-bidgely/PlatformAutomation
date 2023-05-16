@@ -209,7 +209,7 @@ public class RestUtils {
         requestParams.put("statement", query);
         given.header("Content-Type", "application/json");
         given.body(requestParams.toString());
-        Response post = given.post();
-        return post;
+        Response response = given.post();
+        return response;
     }
 }

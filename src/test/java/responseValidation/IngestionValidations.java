@@ -2,7 +2,7 @@ package responseValidation;
 
 import com.amazonaws.thirdparty.jackson.databind.JsonNode;
 import commonUtils.Utils;
-import constants.UserType;
+import constants.ConstantFile;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.slf4j.Logger;
@@ -13,8 +13,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
-import reporting.ExtentReportManager;
-import scala.Int;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -180,9 +178,6 @@ public class IngestionValidations {
         //To verify the field getting in S3 and input file
         joinedData.foreach(row -> {
 
-            //to verify the billing end time
-            //   System.out.println(row.getAs("billing_start_time").toString() +"   "+row.getAs("billingStartDate").toString());
-
             if(row.getAs("billing_start_time")!=null &&
                     row.getAs("billing_start_time").toString().equals(row.getAs("billingStartDate").toString())) {
                 SoftAssert softAssert = new SoftAssert();
@@ -201,17 +196,16 @@ public class IngestionValidations {
                 //to Verify the USER type in s3
                 if (row.getAs("dataStreamType").toString().equals("AMI")) {
                     logger.info("verifying the user type in S3 based on Meter type");
-                    softAssert.assertEquals(row.getAs("user_type"), UserType.UserTypeAMIMeter);
+                    softAssert.assertEquals(row.getAs("user_type"), ConstantFile.UserTypeAMIMeter);
                 } else if (row.getAs("dataStreamType").toString().equals("AMR")) {
                     logger.info("verifying the user type in S3 based on Meter type");
-                    softAssert.assertEquals(row.getAs("user_type"), UserType.UserTypeAMRMeter);
+                    softAssert.assertEquals(row.getAs("user_type"), ConstantFile.UserTypeAMRMeter);
                 }
                 else
                 {
                     logger.info("verifying the user type in S3 based on Meter type");
-                    softAssert.assertEquals(row.getAs("user_type"), UserType.UserTypeNSMMeter);
+                    softAssert.assertEquals(row.getAs("user_type"), ConstantFile.UserTypeNSMMeter);
                 }
-                //TODO
                 //to verify the Measurement type in s3
                 if (row.getAs("fuelType").toString().equals("ELECTRIC")) {
                     logger.info("verifying the measurement type in S3 based on Meter type");
@@ -232,8 +226,8 @@ public class IngestionValidations {
             }
             else
             {
-                System.out.println("Records not present in S3 bucket");
-                System.out.println(row.toString());
+                logger.info("Records not present in S3 bucket");
+                logger.info(row.toString());
             }
 
         });
@@ -244,7 +238,7 @@ public class IngestionValidations {
 
             if (hm.containsKey(column1Value)) {
                 JsonNode jsonNode= hm.get(column1Value);
-                System.out.println(jsonNode);
+                logger.info(jsonNode.toString());
                 String endTime = jsonNode.get("billing_end_time").asText();
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                 Date enDate = dateFormat.parse(endTime);
@@ -258,7 +252,7 @@ public class IngestionValidations {
                 Double value2 = Double.parseDouble(jsonNode.get("consumption_value").toString().replaceAll("\"",""));
                 BigDecimal decimal1 = BigDecimal.valueOf(value1).setScale(1, BigDecimal.ROUND_HALF_UP);
                 BigDecimal decimal2 = BigDecimal.valueOf(value2).setScale(1, BigDecimal.ROUND_HALF_UP);
-                System.out.println(decimal1 +" "+decimal2);
+                logger.info(decimal1 +" "+decimal2);
                 Assert.assertEquals(decimal1,decimal2);
 
                 //for currency cost verification
@@ -267,21 +261,21 @@ public class IngestionValidations {
                 decimal1 = BigDecimal.valueOf(val1).setScale(2, BigDecimal.ROUND_DOWN);
                 decimal2 = BigDecimal.valueOf(val2).setScale(2, BigDecimal.ROUND_DOWN);
                 Assert.assertEquals(decimal1,decimal2);
-                System.out.println(decimal1+"  "+decimal2);
+                logger.info(decimal1+"  "+decimal2);
 
                 //for user type verification in redshift
                 //to Verify the USER type in s3
                 if (row.getAs("dataStreamType").toString().equals("AMI")) {
                     logger.info("verifying the user type in S3 based on Meter type");
-                    Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), UserType.UserTypeAMIMeter);
+                    Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), ConstantFile.UserTypeAMIMeter);
                 } else if (row.getAs("dataStreamType").toString().equals("AMR")) {
                     logger.info("verifying the user type in S3 based on Meter type");
-                    Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), UserType.UserTypeAMRMeter);
+                    Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), ConstantFile.UserTypeAMRMeter);
                 }
                 else
                 {
                     logger.info("verifying the user type in S3 based on Meter type");
-                    Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), UserType.UserTypeNSMMeter);
+                    Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), ConstantFile.UserTypeNSMMeter);
                 }
 
                 //to verify the Measurement type in s3
@@ -304,8 +298,8 @@ public class IngestionValidations {
 
 
             } else {
-                System.out.println("Following Records not present is the Redshift");
-                System.out.println(row.toString());
+                logger.info("Following Records not present is the Redshift");
+                logger.info(row.toString());
             }
         }
     }
