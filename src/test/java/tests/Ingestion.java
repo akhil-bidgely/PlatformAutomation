@@ -113,7 +113,7 @@ public class Ingestion extends BaseTest{
         //Calling Meter API
         Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws);
         restUtils.printResponseLogInReport(metersApiResponse);
-        ingestionValidations.validateMeters(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,1,model);
+        ingestionValidations.validateMetersSingleMeters(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,1,model);
 
         String t1 = String.valueOf(Instant.now().getEpochSecond());
 
@@ -132,7 +132,7 @@ public class Ingestion extends BaseTest{
         //Calling INVOICE API
         Response utilityDataResponse= restUtils.getUtilityData(userFilePOJO.getUuid(),token,t1);
         Map<String, Map<String, Map<String,String>>> mapTimestampCostData = getTimeStampsInvoiceData(invoiceTempFilePath);
-        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
+        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,1);
 
     }
 
@@ -188,7 +188,7 @@ public class Ingestion extends BaseTest{
         //Calling Meter API
         Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws);
         restUtils.printResponseLogInReport(metersApiResponse);
-        ingestionValidations.validateMeters(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,2,model);
+        ingestionValidations.validateMetersMultiMeter(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,2,model);
 
         String t1 = String.valueOf(Instant.now().getEpochSecond());
 
@@ -210,10 +210,10 @@ public class Ingestion extends BaseTest{
         Response utilityDataResponse= restUtils.getUtilityData(userFilePOJO.getUuid(),token,t1);
         Map<String, Map<String, Map<String,String>>> mapTimestampCostData = new HashMap<>();
         mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath1));
-        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
+        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,1);
         mapTimestampCostData.clear();
         mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath2));
-        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
+        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,2);
     }
 
     @Test(enabled = true,priority = 1)
@@ -241,8 +241,6 @@ public class Ingestion extends BaseTest{
         {
             Assert.fail("Number of records not found in S3 location for uuid within "+ConstantFile.MaxWaitTimeForS3Search+"  "+uuid);
         }
-
-
         //to apply the join based on billing start date
         Dataset <Row> joinedData = rowDatasetInvoiceFileTotal.join(rowDatasetNewS3, rowDatasetInvoiceFileTotal.col("billingStartDate").equalTo(rowDatasetNewS3.col("billing_start_time")),"left_outer");
         logger.info("the data after applying the left outer join is ====");
@@ -253,6 +251,90 @@ public class Ingestion extends BaseTest{
         boolean solarFieldFromMeterFile = solar.equals("False")?false:true;
         //to validate data between s3 and input file
         ingestionValidations.validateFirehoseS3(joinedData,solarFieldFromMeterFile);
+
+
+    }
+
+    @Test(enabled = true, dataProvider = "duelFuelDP", dataProviderClass = IngestionsDataProvider.class)
+    public void duelFuelIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String rawFilePath_2, String invoiceFilePath_1,
+                                   String model, int gws1, int gws2) throws IOException, java.text.ParseException {
+
+        //Map of variable to be changed in csv files
+        Map<String, String> executionVariables = JsonUtils.getExecutionVariables();
+        String dataStreamId1=executionVariables.get("dataStreamId");
+        String dataStreamId2= String.valueOf(Long.parseLong(executionVariables.get("dataStreamId"))+1);
+
+        //USERENROLL file upload
+        UserFilePOJO userFilePOJO= new UserFilePOJO();
+        String userTempFilePath=processFile(userFilePath,executionVariables,userFilePOJO, meterFilePOJO,executionVariables.get("dataStreamId"));
+        Utils.s3UploadFile(userTempFilePath);
+
+        //METERENROLL file upload
+        String meterTempFilePath=processFile(meterFilePath,executionVariables,null,meterFilePOJO,executionVariables.get("dataStreamId"));
+        Utils.s3UploadFile(meterTempFilePath);
+
+        //RAW file upload
+        String rawTempFilePath1=processFile(rawFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,dataStreamId1);
+        Utils.s3UploadFile(rawTempFilePath1);
+
+        //RAW file upload
+        String rawTempFilePath2=processFile(rawFilePath_2,executionVariables,userFilePOJO,meterFilePOJO, dataStreamId2);
+        Utils.s3UploadFile(rawTempFilePath2);
+
+        //Invoice file upload
+        String invoiceTempFilePath1=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,dataStreamId1);
+        Utils.s3UploadFile(invoiceTempFilePath1);
+
+        //TODO : Add awaitility wait instead of hard wait
+//        Thread.sleep(5000);
+        Response partnerUserIdResponse= restUtils.getPartnerUserId(token,executionVariables);
+        userFilePOJO.setUuid(JsonUtils.getUuidFromPremiseId(partnerUserIdResponse));
+
+        //Calling Pilot config API
+        Response getPilotConfigResponse= restUtils.getPilotConfigs(token,AMEREN_PILOT_ID);
+        String timeZone=JsonUtils.getTimeZone(getPilotConfigResponse);
+
+        //Calling User Details API
+        Response usersApiResponse= restUtils.getUsers(userFilePOJO.getUuid(),token);
+
+        //Validating User Details API response
+        ingestionValidations.validateUserDetails(usersApiResponse,userFilePOJO,timeZone,executionVariables,AMEREN_PILOT_ID);
+
+        //Calling Meter API
+        Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws1);
+        restUtils.printResponseLogInReport(metersApiResponse);
+        ingestionValidations.validateMetersDuelFuel(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws1,1,model);
+
+        //Calling Meter API
+        metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws2);
+        restUtils.printResponseLogInReport(metersApiResponse);
+        ingestionValidations.validateMetersDuelFuel(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws2,1,model);
+
+        String t1 = String.valueOf(Instant.now().getEpochSecond());
+
+        //Calling Label TimeStamp API
+        Response label= restUtils.getLabelTimeStamp(userFilePOJO.getUuid(),token);
+        ingestionValidations.validateLableTimeStamp(label.asString());
+
+        //Calling gbJson API
+        Response gbJsonApiResponse= restUtils.getGbJsonApi(userFilePOJO.getUuid(),token,t1,scenario,gws1);
+        Map<String, String> mapTimestampConsumption = new HashMap<>();
+        mapTimestampConsumption.putAll(getTimeStampsConsumption(rawTempFilePath1));
+        mapTimestampConsumption.putAll(getTimeStampsConsumption(rawTempFilePath2));
+        ingestionValidations.validateGbJsonConsumption(gbJsonApiResponse,mapTimestampConsumption);
+
+        //Internal bucket Invoice file upload
+        t1 = String.valueOf(Instant.now().getEpochSecond());
+
+        //Calling INVOICE API
+        Response utilityDataResponse= restUtils.getUtilityData(userFilePOJO.getUuid(),token,t1);
+        Map<String, Map<String, Map<String,String>>> mapTimestampCostData = new HashMap<>();
+        mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath1));
+        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,1);
+//        mapTimestampCostData.clear();
+//        mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath2));
+//        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
+
     }
 
 
@@ -338,16 +420,16 @@ public class Ingestion extends BaseTest{
 
         do {
             String s3path="s3a://"+bucket+path;
-                Dataset<Row> df = Utils.getS3FirehoseData(spark, s3path);
+            Dataset<Row> df = Utils.getS3FirehoseData(spark, s3path);
 
-                Dataset<Row> rowS3Dataset = df.filter(df.col("uuid").equalTo(uuid))
-                        .filter(df.col("bidgely_generated_invoice").equalTo("false"))
-                        .orderBy(df.col("billing_start_time"));
+            Dataset<Row> rowS3Dataset = df.filter(df.col("uuid").equalTo(uuid))
+                    .filter(df.col("bidgely_generated_invoice").equalTo("false"))
+                    .orderBy(df.col("billing_start_time"));
 
-                rowDatasetNewS3 = rowS3Dataset.withColumn("billing_start_time", from_unixtime(rowS3Dataset.col("billing_start_time").divide(1000), "yyyy-MM-dd"))
-                        .withColumn("billing_end_time", from_unixtime(rowS3Dataset.col("billing_end_time").divide(1000), "yyyy-MM-dd"));
+            rowDatasetNewS3 = rowS3Dataset.withColumn("billing_start_time", from_unixtime(rowS3Dataset.col("billing_start_time").divide(1000), "yyyy-MM-dd"))
+                    .withColumn("billing_end_time", from_unixtime(rowS3Dataset.col("billing_end_time").divide(1000), "yyyy-MM-dd"));
 
-                logger.info("the number of records found in  is" + rowDatasetNewS3.count());
+            logger.info("the number of records found in  is" + rowDatasetNewS3.count());
             if(rowDatasetNewS3.count()==0)
             {
                 path = ConstantFile.UtilityBillingDataFirehosePrefix+ date +"/*";
