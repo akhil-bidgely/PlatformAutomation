@@ -5,6 +5,10 @@ import com.amazonaws.thirdparty.jackson.databind.ObjectMapper;
 import constants.ConstantFile;
 import constants.FilePaths;
 import dataProviderFile.IngestionsDataProvider;
+import io.qameta.allure.Description;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Step;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -73,6 +77,9 @@ public class Ingestion extends BaseTest{
     }
 
     @Test(alwaysRun = true, dataProvider = "singleMeterDP", dataProviderClass = IngestionsDataProvider.class,priority = 0)
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Test for single meter ingestions")
+    @Step("to test AMI E ingestions")
     public void singleMeterIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String invoiceFilePath_1,String model, int gws) throws IOException, java.text.ParseException {
 
         //Map of variable to be changed in csv files
@@ -216,7 +223,10 @@ public class Ingestion extends BaseTest{
         ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
     }
 
-    @Test(enabled = true,priority = 1)
+    @Test(enabled = true,priority = 1,description = "verifying the firehose validations")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Test for validationg data in Firehose S3")
+    @Step("to test fire hose")
     public void testFireHoseDataValidation()
     {
         //to compute date and format it in the path format
@@ -257,7 +267,7 @@ public class Ingestion extends BaseTest{
 
 
 
-    @Test(dependsOnMethods = "testFireHoseDataValidation",priority = 2)
+    @Test(enabled = true,dependsOnMethods = "testFireHoseDataValidation",priority = 2)
     public void testCountInFirehoseS3WithInputFile()
     {
 
@@ -303,7 +313,7 @@ public class Ingestion extends BaseTest{
         IngestionValidations.validateRedshiftData(rowDatasetInvoiceFileTotal,hm,solarFieldFromMeterFile);
     }
 
-    @Test(dependsOnMethods = "testRedshiftDataValidation",priority = 3)
+    @Test(enabled=true,dependsOnMethods = "testRedshiftDataValidation",priority = 3)
     public void testCountInRedshiftWithInputFile()
     {
         logger.info("Number of records in input file is  "+rowDatasetInvoiceFileTotal.count());
