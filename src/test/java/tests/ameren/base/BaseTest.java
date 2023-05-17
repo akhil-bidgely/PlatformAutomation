@@ -1,4 +1,4 @@
-package tests;
+package tests.ameren.base;
 
 import commonUtils.UserFileAmi;
 import dataProviderFile.IngestionsDataProvider;
@@ -8,11 +8,11 @@ import responseValidation.IngestionValidations;
 import serviceHelper.RestUtils;
 
 public class BaseTest {
-    IngestionValidations ingestionValidations;
-    UserFileAmi userFileAmi;
-    UserFilePOJO userFilePOJO;
-    MeterFilePOJO meterFilePOJO;
-    RestUtils restUtils;
+    public IngestionValidations ingestionValidations;
+    public UserFileAmi userFileAmi;
+    public UserFilePOJO userFilePOJO;
+    public MeterFilePOJO meterFilePOJO;
+    public RestUtils restUtils;
     IngestionsDataProvider ingestionsDataProvider;
 
     public BaseTest(){
