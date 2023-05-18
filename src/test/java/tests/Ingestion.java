@@ -2,9 +2,12 @@ package tests;
 
 import com.amazonaws.thirdparty.jackson.databind.JsonNode;
 import com.amazonaws.thirdparty.jackson.databind.ObjectMapper;
+import com.aventstack.extentreports.ExtentReports;
 import constants.ConstantFile;
 import constants.FilePaths;
 import dataProviderFile.IngestionsDataProvider;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -18,6 +21,7 @@ import org.apache.spark.sql.SparkSession;
 import commonUtils.JsonUtils;
 import commonUtils.Utils;
 import org.testng.annotations.*;
+import reporting.ExtentReportManager;
 import responseValidation.IngestionValidations;
 
 import java.io.IOException;
@@ -224,30 +228,38 @@ public class Ingestion extends BaseTest{
         readInputFiles();
         String date=Utils.getTodayDate();
         String  utcHour=Utils.getUtcTime();
+        String uuid=userFilePOJO.getUuid();
+
+        uuid="4ce01079-1206-4404-a5c6-0fc187fd0544";
+        date="2023/05/12";
+        utcHour="10";
         String bucket= ConstantFile.CommonMetricsNonprodqaBucket;
         String path= ConstantFile.UtilityBillingDataFirehosePrefix+date+"/"+utcHour+"/";
-        String uuid=userFilePOJO.getUuid();
+
         logger.info("Starting the TC testFireHoseDataValidation for UUID as "+uuid);
         logger.info("the bucket and path is  "+bucket+path);
         logger.info("waiting for the ingestion event sent to Firehose S3 for 5 minutes");
+        /*
         try {
             Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+         */
         //to read the data from S3 Firehose
         readS3Data( bucket, path, uuid,date);
         if(rowDatasetNewS3.count()==0)
         {
             Assert.fail("Number of records not found in S3 location for uuid within "+ConstantFile.MaxWaitTimeForS3Search+"  "+uuid);
         }
-
-
+        ExtentReportManager.logInfoDetails("S3 Bucket Records are "+rowDatasetNewS3.showString(20,20,true));
+        ExtentReportManager.logInfoDetails("Now applyling the join Dataframe on input and s3 records based on startTime");
         //to apply the join based on billing start date
         Dataset <Row> joinedData = rowDatasetInvoiceFileTotal.join(rowDatasetNewS3, rowDatasetInvoiceFileTotal.col("billingStartDate").equalTo(rowDatasetNewS3.col("billing_start_time")),"left_outer");
         logger.info("the data after applying the left outer join is ====");
         joinedData.show(100);
 
+        ExtentReportManager.logInfoDetails("the data after applying the left outer join is ===="+joinedData.showString(20,20,true));
 
         String solar=dfMeterFile.first().getAs("solar");
         boolean solarFieldFromMeterFile = solar.equals("False")?false:true;
@@ -261,16 +273,18 @@ public class Ingestion extends BaseTest{
     public void testCountInFirehoseS3WithInputFile()
     {
 
-        logger.info("the number of records found in input invoice file with charge type total as  "+rowDatasetInvoiceFileTotal.count());
-        logger.info("the number of records found in S3 bidgely_generated_invoice as false is "+rowDatasetNewS3.count());
+        ExtentReportManager.logInfoDetails("the number of records found in input invoice file with charge type total as  "+rowDatasetInvoiceFileTotal.count());
+        ExtentReportManager.logInfoDetails("the number of records found in S3 bidgely_generated_invoice as false is "+rowDatasetNewS3.count());
         Assert.assertEquals(rowDatasetNewS3.count(),rowDatasetInvoiceFileTotal.count());
     }
 
     @Test(enabled=true,priority = 4)
     public void testRedshiftDataValidation() throws IOException, java.text.ParseException {
         String uuid=userFilePOJO.getUuid();
+        uuid="4ce01079-1206-4404-a5c6-0fc187fd0544";
+        String tabelName="utility_billing_data";
         //The current date records will be present in utility_billing_data_firehose table after that the records will be pushed to utility_billing_data table
-        String query = "select * from utility_billing_data_firehose where uuid='"+uuid+"' and bidgely_generated_invoice='false' order by billing_start_time asc";
+        String query = "select * from "+tabelName+" where uuid='"+uuid+"' and bidgely_generated_invoice='false' order by billing_start_time asc";
         Response response = restUtils.postRedshiftQuery(query);
         Assert.assertEquals(response.getStatusCode(), 200);
         logger.info(response.asString());
@@ -278,7 +292,7 @@ public class Ingestion extends BaseTest{
 
         // Extract the response body as a String
         String responseBody = response.getBody().asString();
-        logger.info("the response from redshift is "+responseBody);
+        ExtentReportManager.logInfoDetails("the response from redshift is "+responseBody);
 
         // Parse the response body as a JSON array using Jackson
         ObjectMapper mapper = new ObjectMapper();
@@ -297,7 +311,7 @@ public class Ingestion extends BaseTest{
             hm.put(startFormatedDate, jsonNode);
         }
 
-        logger.info(hm.toString());
+        ExtentReportManager.logInfoDetails(hm.toString());
         String solar=dfMeterFile.first().getAs("solar");
         boolean solarFieldFromMeterFile = solar.equals("False")?false:true;
         IngestionValidations.validateRedshiftData(rowDatasetInvoiceFileTotal,hm,solarFieldFromMeterFile);
@@ -306,8 +320,8 @@ public class Ingestion extends BaseTest{
     @Test(dependsOnMethods = "testRedshiftDataValidation",priority = 3)
     public void testCountInRedshiftWithInputFile()
     {
-        logger.info("Number of records in input file is  "+rowDatasetInvoiceFileTotal.count());
-        logger.info("Number of records in Redshift file is   "+jsonArrayFromRedshift.size());
+        ExtentReportManager.logInfoDetails("Number of records in input file is  "+rowDatasetInvoiceFileTotal.count());
+        ExtentReportManager.logInfoDetails("Number of records in Redshift file is   "+jsonArrayFromRedshift.size());
         Assert.assertEquals(jsonArrayFromRedshift.size(),rowDatasetInvoiceFileTotal.count());
     }
 
@@ -323,8 +337,9 @@ public class Ingestion extends BaseTest{
         Dataset<Row> dfInvoiceFile = Utils.readInvoiceInputFile(spark, filePath);
         //to filter based on the billingStartDate and charge type is Total as in Firehose S3 we store only the charge Type Total
         rowDatasetInvoiceFileTotal= dfInvoiceFile.filter(dfInvoiceFile.col("chargeType").equalTo("TOTAL")).filter((dfInvoiceFile.col("billingStartDate").geq(dateBefore395Days))).orderBy(dfInvoiceFile.col("billingStartDate"));
-
         rowDatasetInvoiceFileTotal.show(100);
+        ExtentReportManager.logInfoDetails("Invoice Input File Records are "+rowDatasetInvoiceFileTotal.showString(20,20,true));
+
         String filePath2=METER_ENROLLMENT_AMI_E_PATH;
         //To define the schema of the input invoice File
         dfMeterFile =Utils.readMeterInputFile(spark,filePath2);

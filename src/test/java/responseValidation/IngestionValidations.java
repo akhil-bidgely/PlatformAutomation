@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
+import reporting.ExtentReportManager;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -176,43 +177,41 @@ public class IngestionValidations {
     public void validateFirehoseS3(Dataset<Row> joinedData, boolean solarFieldFromMeterFile)
     {
         //To verify the field getting in S3 and input file
-        joinedData.foreach(row -> {
+        for (Row row : joinedData.collectAsList()) {
 
             if(row.getAs("billing_start_time")!=null &&
                     row.getAs("billing_start_time").toString().equals(row.getAs("billingStartDate").toString())) {
                 SoftAssert softAssert = new SoftAssert();
-                logger.info("the billing end time values in s3 and input file is " + row.getAs("billing_end_time").toString() + " " + row.getAs("billingEndDate").toString());
+                ExtentReportManager.logInfoDetails("the billing end time values in s3 and input file is " + row.getAs("billing_end_time").toString() + " " + row.getAs("billingEndDate").toString());
                 softAssert.assertEquals(row.getAs("billing_end_time").toString(), row.getAs("billingEndDate").toString());
 
                 //to verify the consumption values
-                logger.info("the consumption values in s3 and input file is " + row.getAs("consumption").toString() + " " + row.getAs("consumption_value").toString());
+                ExtentReportManager.logInfoDetails("the consumption values in s3 and input file is " + row.getAs("consumption").toString() + " " + row.getAs("consumption_value").toString());
                 softAssert.assertEquals(row.getAs("consumption").toString(), row.getAs("consumption_value").toString(), "Consumption Not getting matched"
                         + row.getAs("consumption").toString() + " " + row.getAs("consumption_value"));
 
                 //to verify the cost values
-                logger.info("the cost values in s3 and input file is " + row.getAs("cost").toString() + " " + row.getAs("currencyCost").toString());
+                ExtentReportManager.logInfoDetails("the cost values in s3 and input file is " + row.getAs("cost").toString() + " " + row.getAs("currencyCost").toString());
                 softAssert.assertEquals(row.getAs("cost").toString(), row.getAs("currencyCost").toString());
 
+                ExtentReportManager.logInfoDetails("verifying the user type in S3 based on Meter type");
                 //to Verify the USER type in s3
                 if (row.getAs("dataStreamType").toString().equals("AMI")) {
-                    logger.info("verifying the user type in S3 based on Meter type");
                     softAssert.assertEquals(row.getAs("user_type"), ConstantFile.UserTypeAMIMeter);
                 } else if (row.getAs("dataStreamType").toString().equals("AMR")) {
-                    logger.info("verifying the user type in S3 based on Meter type");
                     softAssert.assertEquals(row.getAs("user_type"), ConstantFile.UserTypeAMRMeter);
                 }
                 else
                 {
-                    logger.info("verifying the user type in S3 based on Meter type");
                     softAssert.assertEquals(row.getAs("user_type"), ConstantFile.UserTypeNSMMeter);
                 }
                 //to verify the Measurement type in s3
                 if (row.getAs("fuelType").toString().equals("ELECTRIC")) {
-                    logger.info("verifying the measurement type in S3 based on Meter type");
+                    ExtentReportManager.logInfoDetails("verifying the measurement type in S3 based on Meter type");
                     softAssert.assertEquals(row.getAs("measurement_type"), "Electricity");
                 }
                 //to verify the solar field
-                logger.info("verifying the solar field in S3 based on Meter File" + row.getAs("solar").toString() + " " + solarFieldFromMeterFile);
+                ExtentReportManager.logInfoDetails("verifying the solar field in S3 based on Meter File" + row.getAs("solar").toString() + " " + solarFieldFromMeterFile);
                 softAssert.assertEquals(Boolean.parseBoolean(row.getAs("solar").toString()), solarFieldFromMeterFile);
 
                 softAssert.assertEquals(row.getAs("bidgely_generated_invoice").toString(), "false");
@@ -226,11 +225,10 @@ public class IngestionValidations {
             }
             else
             {
-                logger.info("Records not present in S3 bucket");
-                logger.info(row.toString());
+                ExtentReportManager.logInfoDetails("Records not present in S3 bucket");
+                ExtentReportManager.logInfoDetails(row.toString());
             }
-
-        });
+        }
     }
     public static  void validateRedshiftData(Dataset<Row> rowDatasetInvoiceFileTotal, HashMap<String, JsonNode> hm, boolean solarFieldFromMeterFile) throws java.text.ParseException {
         for (Row row : rowDatasetInvoiceFileTotal.collectAsList()) {
@@ -238,7 +236,7 @@ public class IngestionValidations {
 
             if (hm.containsKey(column1Value)) {
                 JsonNode jsonNode= hm.get(column1Value);
-                logger.info(jsonNode.toString());
+                ExtentReportManager.logInfoDetails(jsonNode.toString());
                 String endTime = jsonNode.get("billing_end_time").asText();
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                 Date enDate = dateFormat.parse(endTime);
@@ -252,7 +250,7 @@ public class IngestionValidations {
                 Double value2 = Double.parseDouble(jsonNode.get("consumption_value").toString().replaceAll("\"",""));
                 BigDecimal consumtionValueInput = BigDecimal.valueOf(value1).setScale(1, BigDecimal.ROUND_HALF_UP);
                 BigDecimal consumtionValueRedshift = BigDecimal.valueOf(value2).setScale(1, BigDecimal.ROUND_HALF_UP);
-                logger.info(consumtionValueInput +" "+consumtionValueRedshift);
+                ExtentReportManager.logInfoDetails(consumtionValueInput +" "+consumtionValueRedshift);
                 Assert.assertEquals(consumtionValueInput,consumtionValueRedshift);
 
                 //for currency cost verification
@@ -261,26 +259,24 @@ public class IngestionValidations {
                 BigDecimal costValueInput = BigDecimal.valueOf(val1).setScale(2, BigDecimal.ROUND_DOWN);
                 BigDecimal costValueRedshift = BigDecimal.valueOf(val2).setScale(2, BigDecimal.ROUND_DOWN);
                 Assert.assertEquals(costValueInput,costValueRedshift);
-                logger.info(costValueInput+"  "+costValueRedshift);
+                ExtentReportManager.logInfoDetails(costValueInput+"  "+costValueRedshift);
 
                 //for user type verification in redshift
                 //to Verify the USER type in s3
+                ExtentReportManager.logInfoDetails("verifying the user type in S3 based on Meter type");
                 if (row.getAs("dataStreamType").toString().equals("AMI")) {
-                    logger.info("verifying the user type in S3 based on Meter type");
                     Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), ConstantFile.UserTypeAMIMeter);
                 } else if (row.getAs("dataStreamType").toString().equals("AMR")) {
-                    logger.info("verifying the user type in S3 based on Meter type");
                     Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), ConstantFile.UserTypeAMRMeter);
                 }
                 else
                 {
-                    logger.info("verifying the user type in S3 based on Meter type");
                     Assert.assertEquals(jsonNode.get("user_type").toString().replaceAll("\"",""), ConstantFile.UserTypeNSMMeter);
                 }
 
                 //to verify the Measurement type in s3
                 if (row.getAs("fuelType").toString().equals("ELECTRIC")) {
-                    logger.info("verifying the measurement type in S3 based on Meter type");
+                    ExtentReportManager.logInfoDetails("verifying the measurement type in S3 based on Meter type");
                     Assert.assertEquals(jsonNode.get("measurement_type").toString().replaceAll("\"",""), "Electricity");
                 }
 
@@ -298,8 +294,8 @@ public class IngestionValidations {
 
 
             } else {
-                logger.info("Following Records not present is the Redshift");
-                logger.info(row.toString());
+                ExtentReportManager.logInfoDetails("Following Records not present is the Redshift");
+                ExtentReportManager.logInfoDetails(row.toString());
             }
         }
     }
