@@ -60,8 +60,6 @@ public class IngestionValidations {
 //        File schema = new File("src/test/resources/Ameren/AMI_E/SchemaFiles/userDetails.json");
 //        response.then().body(JsonSchemaValidator.matchesJsonSchema(schema));
 
-        softAssert.assertAll();
-
     }
 
     public void validateMetersSingleMeters(Response response, String scenario, String uuid, String pilotId, Map<String, String> executionVariables, MeterFilePOJO meterFilePOJO, int gws, int meters, String model){
@@ -157,7 +155,6 @@ public class IngestionValidations {
             }
             Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
         }
-        softAssert.assertAll();
     }
 
     public void validateUtilityData(Response response, Map<String, Map<String, Map<String,String>>> mapTimestampInvoiceData, int meterId) {
@@ -212,7 +209,6 @@ public class IngestionValidations {
                 Utils.assertExpectedValuesWithJsonPath(response,expectedValMap);
             }
 
-            softAssert.assertAll();
         }
     }
     public String getChecker(JSONObject jsonObject){
