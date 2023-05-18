@@ -11,7 +11,7 @@ public class IngestionsDataProvider {
     public Object[][] singleMeterDP(){
         return new Object[][]{
                 {"AMI_E",USER_ENROLLMENT_AMI_E_PATH, METER_ENROLLMENT_AMI_E_PATH, RAW_AMI_E_PATH, INVOICE_AMI_E_PATH,"GreenButton",AMI_E_GWS},
-//                {"AMR_E",USER_ENROLLMENT_AMR_E_PATH, METER_ENROLLMENT_AMR_E_PATH, RAW_AMR_E_PATH, INVOICE_AMR_E_PATH, "GB_MONTH"},
+                {"AMR_E",USER_ENROLLMENT_AMR_E_PATH, METER_ENROLLMENT_AMR_E_PATH, RAW_AMR_E_PATH, INVOICE_AMR_E_PATH, "GB_MONTH", AMR_E_GWS},
         };
     }
 

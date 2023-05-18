@@ -11,10 +11,10 @@ public class FilePaths {
     public static final String USER_PREFERENCE_AMI_E_PATH =userdir+"/src/test/resources/Ameren/Single Meter/AMI_E/USER_PREFS_500400306.csv";
 
     //AMR_E filePaths
-    public static final String USER_ENROLLMENT_AMR_E_PATH =userdir+"/src/test/resources/Ameren/Single Meter/AMR_E/USERENROLL_D_500300208.csv";
-    public static final String METER_ENROLLMENT_AMR_E_PATH =userdir+"/src/test/resources/Ameren/Single Meter/AMR_E/METERENROLL_D_500300208.csv";
-    public static final String RAW_AMR_E_PATH =userdir+"/src/test/resources/Ameren/Single Meter/AMR_E/RAW_D_86400_S_500300208_AMR.csv";
-    public static final String INVOICE_AMR_E_PATH =userdir+"/src/test/resources/Ameren/Single Meter/AMR_E/INVOICE_500300208.csv";
+    public static final String USER_ENROLLMENT_AMR_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMR_E/USERENROLL_D_500300208.csv";
+    public static final String METER_ENROLLMENT_AMR_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMR_E/METERENROLL_D_500300208.csv";
+    public static final String RAW_AMR_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMR_E/RAW_D_86400_S_500300208_AMR.csv";
+    public static final String INVOICE_AMR_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMR_E/INVOICE_500300208.csv";
     public static final String USER_PREFERENCE_AMR_E_PATH =userdir+"/src/test/resources/Ameren/Single Meter/AMR_E/USER_PREFS_500300208.csv";
 
     //AMR_G filePaths
