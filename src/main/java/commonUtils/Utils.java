@@ -152,7 +152,7 @@ public class Utils {
                                 .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],String.valueOf(dataStreamIdTemp));
 
                         String[] updatedLineArr = updatedLine.split("\\|");
-                        meterFilePOJO.setService_type(updatedLineArr[4]);
+//                        meterFilePOJO.setService_type(updatedLineArr[4]);
                         meterFilePOJO.setMeter_type(updatedLineArr[12]);
                     } else {
                         updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
@@ -257,11 +257,7 @@ public class Utils {
         Map<String,String> cMap= new HashMap<>();
         String[] fileParam = line.split("\\|");
         cMap.put("bc_start_date", String.valueOf(getEpochTimeFromDate(fileParam[6])));
-        parentExtent.info("bc_start_date in sheet :"+fileParam[6]);
-        parentExtent.info("bc_start_date converted:"+String.valueOf(getEpochTimeFromDate(fileParam[6])));
         cMap.put("bc_end_date", String.valueOf(getEpochTimeFromDate(fileParam[7])));
-        parentExtent.info("bc_end_date in sheet :"+fileParam[7]);
-        parentExtent.info("bc_end_date converted :"+String.valueOf(getEpochTimeFromDate(fileParam[7])));
         cMap.put("charge_name", fileParam[9]);
         cMap.put("charge_type", fileParam[10]);
         cMap.put("kWh_Consumption", fileParam[11]);

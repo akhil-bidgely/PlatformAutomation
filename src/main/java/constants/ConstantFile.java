@@ -4,6 +4,7 @@ public class ConstantFile {
     public static final String AMEREN_PILOT_ID =  "10057";
     public static final Integer AMI_E_GWS =  2;
     public static final Integer AMR_E_GWS =  3;
+    public static final Integer AMR_G_GWS =  4;
 
     public static final  String CommonMetricsNonprodqaBucket ="common-metrics-nonprodqa";
     public static final  String UtilityBillingDataFirehosePrefix ="/utility_billing_data_firehose/";
