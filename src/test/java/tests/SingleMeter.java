@@ -8,7 +8,6 @@ import dataProviderFile.IngestionsDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
-import pojoClasses.UserFilePOJO;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import io.restassured.response.Response;
@@ -36,9 +35,9 @@ import static constants.FilePaths.METER_ENROLLMENT_AMI_E_PATH;
 import static org.apache.spark.sql.functions.from_unixtime;
 import static reporting.Setup.parentExtent;
 
-public class singleMeter extends BaseTest{
+public class SingleMeter extends BaseTest{
     String token= "";
-    private static Logger logger = LoggerFactory.getLogger(singleMeter.class);
+    private static Logger logger = LoggerFactory.getLogger(SingleMeter.class);
     SparkSession spark;
 
     Dataset<Row> rowDatasetNewS3;

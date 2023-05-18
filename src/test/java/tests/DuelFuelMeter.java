@@ -17,13 +17,12 @@ import java.util.Map;
 
 import static commonUtils.JsonUtils.getAuthToken;
 import static commonUtils.Utils.*;
-import static commonUtils.Utils.getTimeStampsInvoiceData;
 import static constants.ConstantFile.AMEREN_PILOT_ID;
 
-public class multiMeter extends BaseTest{
+public class DuelFuelMeter extends BaseTest{
 
     String token= "";
-    private static Logger logger = LoggerFactory.getLogger(singleMeter.class);
+    private static Logger logger = LoggerFactory.getLogger(SingleMeter.class);
 
     @BeforeMethod
     public void generateToken() {
@@ -31,9 +30,9 @@ public class multiMeter extends BaseTest{
         token=getAuthToken(response);
     }
 
-    @Test(enabled = false,alwaysRun = true, dataProvider = "multimeterDP", dataProviderClass = IngestionsDataProvider.class)
-    public void multiMeterIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String rawFilePath_2, String invoiceFilePath_1,
-                                     String invoiceFilePath_2,String model, int gws) throws IOException, java.text.ParseException {
+    @Test(enabled = true, dataProvider = "duelFuelDP", dataProviderClass = IngestionsDataProvider.class)
+    public void duelFuelIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String rawFilePath_2, String invoiceFilePath_1,
+                                   String model, int gws1, int gws2) throws IOException, java.text.ParseException {
 
         //Map of variable to be changed in csv files
         Map<String, String> executionVariables = JsonUtils.getExecutionVariables();
@@ -53,17 +52,13 @@ public class multiMeter extends BaseTest{
         String rawTempFilePath1=processFile(rawFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,dataStreamId1);
         Utils.s3UploadFile(rawTempFilePath1);
 
-        //Invoice file upload
-        String invoiceTempFilePath1=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,dataStreamId1);
-        Utils.s3UploadFile(invoiceTempFilePath1);
-
         //RAW file upload
         String rawTempFilePath2=processFile(rawFilePath_2,executionVariables,userFilePOJO,meterFilePOJO, dataStreamId2);
         Utils.s3UploadFile(rawTempFilePath2);
 
         //Invoice file upload
-        String invoiceTempFilePath2=processFile(invoiceFilePath_2,executionVariables,userFilePOJO,meterFilePOJO, dataStreamId2);
-        Utils.s3UploadFile(invoiceTempFilePath2);
+        String invoiceTempFilePath1=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,dataStreamId1);
+        Utils.s3UploadFile(invoiceTempFilePath1);
 
         //TODO : Add awaitility wait instead of hard wait
 //        Thread.sleep(5000);
@@ -81,9 +76,14 @@ public class multiMeter extends BaseTest{
         ingestionValidations.validateUserDetails(usersApiResponse,userFilePOJO,timeZone,executionVariables,AMEREN_PILOT_ID);
 
         //Calling Meter API
-        Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws);
+        Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws1);
         restUtils.printResponseLogInReport(metersApiResponse);
-        ingestionValidations.validateMetersMultiMeter(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,2,model);
+        ingestionValidations.validateMetersDuelFuel(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws1,1,model);
+
+        //Calling Meter API
+        metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws2);
+        restUtils.printResponseLogInReport(metersApiResponse);
+        ingestionValidations.validateMetersDuelFuel(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws2,1,model);
 
         String t1 = String.valueOf(Instant.now().getEpochSecond());
 
@@ -92,7 +92,7 @@ public class multiMeter extends BaseTest{
         ingestionValidations.validateLableTimeStamp(label.asString());
 
         //Calling gbJson API
-        Response gbJsonApiResponse= restUtils.getGbJsonApi(userFilePOJO.getUuid(),token,t1,scenario,gws );
+        Response gbJsonApiResponse= restUtils.getGbJsonApi(userFilePOJO.getUuid(),token,t1,scenario,gws1);
         Map<String, String> mapTimestampConsumption = new HashMap<>();
         mapTimestampConsumption.putAll(getTimeStampsConsumption(rawTempFilePath1));
         mapTimestampConsumption.putAll(getTimeStampsConsumption(rawTempFilePath2));
@@ -106,8 +106,11 @@ public class multiMeter extends BaseTest{
         Map<String, Map<String, Map<String,String>>> mapTimestampCostData = new HashMap<>();
         mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath1));
         ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,1);
-        mapTimestampCostData.clear();
-        mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath2));
-        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,2);
+//        mapTimestampCostData.clear();
+//        mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath2));
+//        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
+
     }
+
+
 }
