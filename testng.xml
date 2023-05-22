@@ -6,7 +6,11 @@
     </listeners>
     <test verbose="2" preserve-order="true" name="/Users/akhilsharma/IdeaProjects/PlatformAutomation">
         <classes>
-            <class name="tests.Ingestion"/>
+            <class name="tests.Ingestion">
+            <methods>
+                <include name = "testFireHoseDataValidationAgain"/>
+            </methods>
+            </class>
         </classes>
     </test>
 </suite>

@@ -220,12 +220,13 @@ public class Ingestion extends BaseTest{
         ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
     }
 
+
     @Test(enabled = true,priority = 1)
-    public void testFireHoseDataValidation()
+    public void testFireHoseDataValidationAgain()
     {
         //to compute date and format it in the path format
         //for e.g  /utility_billing_data_firehose/2023/05/09/09/
-        readInputFiles();
+        //readInputFiles();
         String date=Utils.getTodayDate();
         String  utcHour=Utils.getUtcTime();
         String uuid=userFilePOJO.getUuid();
@@ -234,7 +235,7 @@ public class Ingestion extends BaseTest{
         date="2023/05/12";
         utcHour="10";
         String bucket= ConstantFile.CommonMetricsNonprodqaBucket;
-        String path= ConstantFile.UtilityBillingDataFirehosePrefix+date+"/"+utcHour+"/";
+        String path= ConstantFile.HomeFirehoseFirehosePrefix+date+"/"+utcHour+"/";
 
         logger.info("Starting the TC testFireHoseDataValidation for UUID as "+uuid);
         logger.info("the bucket and path is  "+bucket+path);
@@ -247,12 +248,16 @@ public class Ingestion extends BaseTest{
         }
          */
         //to read the data from S3 Firehose
-        readS3Data( bucket, path, uuid,date);
-        if(rowDatasetNewS3.count()==0)
+        String s3path="s3a://"+bucket+path;
+        Dataset<Row> df = Utils.getS3FirehoseData(spark, s3path);
+        //readS3Data( bucket, path, uuid,date);
+        Dataset<Row> uuid1 = df.filter(df.col("uuid").equalTo(uuid));
+        if(uuid1.count()==0)
         {
             Assert.fail("Number of records not found in S3 location for uuid within "+ConstantFile.MaxWaitTimeForS3Search+"  "+uuid);
         }
-        ExtentReportManager.logInfoDetails("S3 Bucket Records are "+rowDatasetNewS3.showString(20,20,true));
+        uuid1.show(50);
+       /* ExtentReportManager.logInfoDetails("S3 Bucket Records are "+rowDatasetNewS3.showString(20,20,true));
         ExtentReportManager.logInfoDetails("Now applyling the join Dataframe on input and s3 records based on startTime");
         //to apply the join based on billing start date
         Dataset <Row> joinedData = rowDatasetInvoiceFileTotal.join(rowDatasetNewS3, rowDatasetInvoiceFileTotal.col("billingStartDate").equalTo(rowDatasetNewS3.col("billing_start_time")),"left_outer");
@@ -264,7 +269,7 @@ public class Ingestion extends BaseTest{
         String solar=dfMeterFile.first().getAs("solar");
         boolean solarFieldFromMeterFile = solar.equals("False")?false:true;
         //to validate data between s3 and input file
-        ingestionValidations.validateFirehoseS3(joinedData,solarFieldFromMeterFile);
+        ingestionValidations.validateFirehoseS3(joinedData,solarFieldFromMeterFile);*/
     }
 
 

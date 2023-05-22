@@ -7,6 +7,9 @@ public class ConstantFile {
 
     public static final  String CommonMetricsNonprodqaBucket ="common-metrics-nonprodqa";
     public static final  String UtilityBillingDataFirehosePrefix ="/utility_billing_data_firehose/";
+
+    public static final  String HomeFirehoseFirehosePrefix ="/home_firehose/";
+
     public static final int MaxWaitTimeForS3Search=15;
 
     public static final String UserTypeAMIMeter="GB";
