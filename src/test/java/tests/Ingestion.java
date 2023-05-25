@@ -220,13 +220,12 @@ public class Ingestion extends BaseTest{
         ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData);
     }
 
-
     @Test(enabled = true,priority = 1)
-    public void testFireHoseDataValidationAgain()
+    public void testFireHoseDataValidation()
     {
         //to compute date and format it in the path format
         //for e.g  /utility_billing_data_firehose/2023/05/09/09/
-        //readInputFiles();
+        readInputFiles();
         String date=Utils.getTodayDate();
         String  utcHour=Utils.getUtcTime();
         String uuid=userFilePOJO.getUuid();
@@ -234,6 +233,69 @@ public class Ingestion extends BaseTest{
         uuid="4ce01079-1206-4404-a5c6-0fc187fd0544";
         date="2023/05/12";
         utcHour="10";
+        String bucket= ConstantFile.CommonMetricsNonprodqaBucket;
+        String path= ConstantFile.UtilityBillingDataFirehosePrefix+date+"/"+utcHour+"/";
+
+        logger.info("Starting the TC testFireHoseDataValidation for UUID as "+uuid);
+        logger.info("the bucket and path is  "+bucket+path);
+        logger.info("waiting for the ingestion event sent to Firehose S3 for 5 minutes");
+        /*
+        try {
+            Thread.sleep(5 * 60 * 1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+         */
+        //to read the data from S3 Firehose
+        readS3Data( bucket, path, uuid,date);
+        if(rowDatasetNewS3.count()==0)
+        {
+            Assert.fail("Number of records not found in S3 location for uuid within "+ConstantFile.MaxWaitTimeForS3Search+"  "+uuid);
+        }
+        ExtentReportManager.logInfoDetails("S3 Bucket Records are "+rowDatasetNewS3.showString(20,20,true));
+        ExtentReportManager.logInfoDetails("Now applyling the join Dataframe on input and s3 records based on startTime");
+        //to apply the join based on billing start date
+        Dataset <Row> joinedData = rowDatasetInvoiceFileTotal.join(rowDatasetNewS3, rowDatasetInvoiceFileTotal.col("billingStartDate").equalTo(rowDatasetNewS3.col("billing_start_time")),"left_outer");
+        logger.info("the data after applying the left outer join is ====");
+        joinedData.show(100);
+
+        ExtentReportManager.logInfoDetails("the data after applying the left outer join is ===="+joinedData.showString(20,20,true));
+
+        String solar=dfMeterFile.first().getAs("solar");
+        boolean solarFieldFromMeterFile = solar.equals("False")?false:true;
+        //to validate data between s3 and input file
+        ingestionValidations.validateFirehoseS3(joinedData,solarFieldFromMeterFile);
+    }
+
+    @Test(enabled = true,priority = 1,dataProvider = "singleMeterDP", dataProviderClass = IngestionsDataProvider.class)
+    public void testHomeStreamFireHoseDataValidation(String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String invoiceFilePath_1,String model, int gws) throws IOException {
+        //to compute date and format it in the path format
+        //for e.g  /utility_billing_data_firehose/2023/05/09/09/
+        //readInputFiles();
+        String date=Utils.getTodayDate();
+        String  utcHour=Utils.getUtcTime();
+        String uuid=userFilePOJO.getUuid();
+
+        //Map of variable to be changed in csv files
+        Map<String, String> executionVariables = JsonUtils.getExecutionVariables();
+        String userTempFilePath=processFile(userFilePath,executionVariables,userFilePOJO, meterFilePOJO,executionVariables.get("dataStreamId"));
+        Utils.s3UploadFile(userTempFilePath);
+
+        //METERENROLL file upload
+        String meterTempFilePath=processFile(meterFilePath,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+        Utils.s3UploadFile(meterTempFilePath);
+
+        //RAW file upload
+        String rawTempFilePath=processFile(rawFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+        Utils.s3UploadFile(rawTempFilePath);
+
+        //Invoice file upload
+        String invoiceTempFilePath=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+        Utils.s3UploadFile(invoiceTempFilePath);
+
+        uuid="b075ee31-248b-46af-af72-6fbe26c71981";
+        date="2023/05/24";
+        utcHour="09";
         String bucket= ConstantFile.CommonMetricsNonprodqaBucket;
         String path= ConstantFile.HomeFirehoseFirehosePrefix+date+"/"+utcHour+"/";
 
@@ -251,12 +313,30 @@ public class Ingestion extends BaseTest{
         String s3path="s3a://"+bucket+path;
         Dataset<Row> df = Utils.getS3FirehoseData(spark, s3path);
         //readS3Data( bucket, path, uuid,date);
-        Dataset<Row> uuid1 = df.filter(df.col("uuid").equalTo(uuid));
-        if(uuid1.count()==0)
+        Dataset<Row> homeFirehose = df.filter(df.col("uuid").equalTo(uuid));
+        homeFirehose.show(30);
+        if(homeFirehose.count()==0)
         {
             Assert.fail("Number of records not found in S3 location for uuid within "+ConstantFile.MaxWaitTimeForS3Search+"  "+uuid);
         }
-        uuid1.show(50);
+        Row row = homeFirehose.head();
+        System.out.println(row);
+
+        //to verify the the city
+        Assert.assertEquals(row.getAs("city").toString(),userFilePOJO.getCity());
+
+        //to verity the country
+        //TODO where we getting the country
+
+
+        Assert.assertEquals(row.getAs("hid").toString(),"1");
+        boolean electricUser=meterFilePOJO.getService_type().equals("ELECTRIC")?true:false;
+        Assert.assertEquals(Boolean.parseBoolean(row.getAs("is_electric_user").toString()),electricUser);
+        Assert.assertEquals(Boolean.parseBoolean(row.getAs("is_gas_user").toString()),false);
+        Assert.assertEquals(Integer.valueOf(row.getAs("pilot_id").toString()),Integer.valueOf(AMEREN_PILOT_ID));
+        Assert.assertEquals(row.getAs("state").toString(),userFilePOJO.getState());
+        Assert.assertEquals(row.getAs("zip").toString(),userFilePOJO.getPostal_code());
+
        /* ExtentReportManager.logInfoDetails("S3 Bucket Records are "+rowDatasetNewS3.showString(20,20,true));
         ExtentReportManager.logInfoDetails("Now applyling the join Dataframe on input and s3 records based on startTime");
         //to apply the join based on billing start date
@@ -272,7 +352,104 @@ public class Ingestion extends BaseTest{
         ingestionValidations.validateFirehoseS3(joinedData,solarFieldFromMeterFile);*/
     }
 
+    @Test(enabled = true,priority = 1,dependsOnMethods = "testHomeStreamFireHoseDataValidation")
+    public void testHomeStreamRedshiftDataValidation() throws IOException {
+        String uuid=userFilePOJO.getUuid();
+        uuid="b075ee31-248b-46af-af72-6fbe26c71981";
 
+
+        String query="select * from home where uuid='"+uuid+"'  limit 1";
+
+        Response response = restUtils.postRedshiftQuery(query);
+        Assert.assertEquals(response.getStatusCode(), 200);
+        String responseBody = response.getBody().asString();
+        System.out.println(responseBody);
+        // Parse the response body as a JSON array using Jackson
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(responseBody).get(0);
+        System.out.println(jsonNode);
+        String utilityId=jsonNode.get("utilityid").toString().replaceAll("\"","");
+        Assert.assertEquals(Integer.valueOf(utilityId),Integer.valueOf(AMEREN_PILOT_ID));
+        Assert.assertTrue(jsonNode.has("country"));
+        String hid=jsonNode.get("hid").toString().replaceAll("\"","");
+        Assert.assertEquals(Integer.valueOf(hid),1);
+
+        String city=jsonNode.get("city").toString().replaceAll("\"","");
+        Assert.assertEquals(city,userFilePOJO.getCity());
+
+        Assert.assertTrue(jsonNode.has("timezone"));
+        Assert.assertTrue(jsonNode.has("dwelling"));
+        Assert.assertTrue(jsonNode.has("totalrooms"));
+
+        String state=jsonNode.get("state").toString().replaceAll("\"","");
+        Assert.assertEquals(state,userFilePOJO.getState());
+
+        String zip=jsonNode.get("zip").toString().replaceAll("\"","");
+        Assert.assertEquals(zip,userFilePOJO.getPostal_code());
+    }
+
+    @Test(dependsOnMethods = "testHomeStreamRedshiftDataValidation")
+    public void testUserMetaDataStreamFirehoseValidation()
+    {
+        String date=Utils.getTodayDate();
+        String  utcHour=Utils.getUtcTime();
+        String uuid=userFilePOJO.getUuid();
+        uuid="b075ee31-248b-46af-af72-6fbe26c71981";
+        date="2023/05/24";
+        utcHour="09";
+
+        String bucket= ConstantFile.CommonMetricsNonprodqaBucket;
+        String path= "/user-meta-data/"+date+"/"+utcHour+"/";
+
+        String s3path="s3a://"+bucket+path;
+        Dataset<Row> df = Utils.getS3FirehoseData(spark, s3path);
+        //readS3Data( bucket, path, uuid,date);
+        Dataset<Row> userMetaData = df.filter(df.col("uuid").equalTo(uuid));
+        userMetaData.show(30);
+        if(userMetaData.count()==0)
+        {
+            Assert.fail("Number of records not found in S3 location for uuid within "+ConstantFile.MaxWaitTimeForS3Search+"  "+uuid);
+        }
+
+
+    }
+
+    @Test(enabled = true,priority = 4,dependsOnMethods = "testHomeStreamFireHoseDataValidation")
+    public void testUserMetaDataStreamRedshiftDataValidation() throws IOException {
+        String uuid=userFilePOJO.getUuid();
+        uuid="b075ee31-248b-46af-af72-6fbe26c71981";
+
+
+        String query="select * from user_meta_data where uuid='"+uuid+"' order by event_timestamp desc limit 1";
+
+        Response response = restUtils.postRedshiftQuery(query);
+        Assert.assertEquals(response.getStatusCode(), 200);
+        String responseBody = response.getBody().asString();
+        System.out.println(responseBody);
+        // Parse the response body as a JSON array using Jackson
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(responseBody).get(0);
+        System.out.println(jsonNode);
+        String utilityId=jsonNode.get("pilot_id").toString().replaceAll("\"","");
+        Assert.assertEquals(Integer.valueOf(utilityId),Integer.valueOf(AMEREN_PILOT_ID));
+        String consentStatus=jsonNode.get("consent_status").toString().replaceAll("\"","");
+        Assert.assertEquals(consentStatus,"OBTAINED");
+
+        String partnerUserId=jsonNode.get("partner_user_id").toString().replaceAll("\"","");
+        Assert.assertEquals(partnerUserId,userFilePOJO.getPartner_user_id());
+
+        Assert.assertTrue(jsonNode.has("is_test_user"));
+        Assert.assertTrue(jsonNode.has("user_status"));
+        Assert.assertTrue(jsonNode.has("notification_user_type"));
+
+        String isResidentialUser=jsonNode.get("is_residential_user").toString().replaceAll("\"","");
+        String resData="RES";
+        boolean expResStatus=resData.equals("RES")?true:false;
+        Assert.assertEquals(Boolean.parseBoolean(isResidentialUser),expResStatus);
+
+
+        //TODO Solar check
+    }
 
     @Test(dependsOnMethods = "testFireHoseDataValidation",priority = 2)
     public void testCountInFirehoseS3WithInputFile()

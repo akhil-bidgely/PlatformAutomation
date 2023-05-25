@@ -7,8 +7,11 @@
     <test verbose="2" preserve-order="true" name="/Users/akhilsharma/IdeaProjects/PlatformAutomation">
         <classes>
             <class name="tests.Ingestion">
-            <methods>
-                <include name = "testFireHoseDataValidationAgain"/>
+            <methods >
+                <include name ="testHomeStreamFireHoseDataValidation"/>
+                <include name="testHomeStreamRedshiftDataValidation"/>
+                <include name="testUserMetaDataStreamFirehoseValidation"/>
+                <include name="testUserMetaDataStreamRedshiftDataValidation"/>
             </methods>
             </class>
         </classes>
