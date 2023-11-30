@@ -144,6 +144,9 @@ public class Utils {
                         userFilePOJO.setState(updatedLineArr[12]);
                         userFilePOJO.setPostal_code(updatedLineArr[13]);
 
+                    }else if (fileNameToUpdate.contains("USER_PREFS")) {
+                        updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1]
+                                , executionVariables.get("partnerUserId")).replace(fileParamTemp[2],executionVariables.get("premiseId"));
                     } else if (fileNameToUpdate.contains("METER")) {
                         updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
                                 .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],dataStreamId);
@@ -338,6 +341,28 @@ public class Utils {
 
     }
 
+    public static Dataset<Row> readMeterInputFile(SparkSession spark,String filePath)
+    {
+        StructType schemaMeter = DataTypes.createStructType(new StructField[] {
+                DataTypes.createStructField("customerId", DataTypes.StringType, true),
+                DataTypes.createStructField("partnerId", DataTypes.StringType, true),
+                DataTypes.createStructField("premiseId", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamId", DataTypes.StringType, true),
+                DataTypes.createStructField("fuelType", DataTypes.StringType, true),
+                DataTypes.createStructField("serviceAgreementStDate", DataTypes.StringType, true),
+                DataTypes.createStructField("serviceAgreementEnDate", DataTypes.StringType, true),
+                DataTypes.createStructField("ratePlanId", DataTypes.StringType, true),
+                DataTypes.createStructField("ratePlanEffectiveDate", DataTypes.StringType, true),
+                DataTypes.createStructField("billingCycleCode", DataTypes.StringType, true),
+                DataTypes.createStructField("billingCycleEffectiveDate", DataTypes.StringType, true),
+                DataTypes.createStructField("solar", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamType", DataTypes.StringType, true),
+                DataTypes.createStructField("label", DataTypes.StringType, true)
+        });
+        Dataset<Row> df2=spark.read().format("csv").schema(schemaMeter).option("sep","|").load(filePath);
+        return df2;
+    }
+
     public static Dataset<Row> readInvoiceInputFile(SparkSession spark, String filePath)
     {
         //To define the schema of the input invoice File
@@ -361,27 +386,5 @@ public class Utils {
 
         Dataset<Row> df1=spark.read().format("csv").schema(schema) .option("sep","|").load(filePath);
         return df1;
-    }
-
-    public static Dataset<Row> readMeterInputFile(SparkSession spark,String filePath)
-    {
-        StructType schemaMeter = DataTypes.createStructType(new StructField[] {
-                DataTypes.createStructField("customerId", DataTypes.StringType, true),
-                DataTypes.createStructField("partnerId", DataTypes.StringType, true),
-                DataTypes.createStructField("premiseId", DataTypes.StringType, true),
-                DataTypes.createStructField("dataStreamId", DataTypes.StringType, true),
-                DataTypes.createStructField("fuelType", DataTypes.StringType, true),
-                DataTypes.createStructField("serviceAgreementStDate", DataTypes.StringType, true),
-                DataTypes.createStructField("serviceAgreementEnDate", DataTypes.StringType, true),
-                DataTypes.createStructField("ratePlanId", DataTypes.StringType, true),
-                DataTypes.createStructField("ratePlanEffectiveDate", DataTypes.StringType, true),
-                DataTypes.createStructField("billingCycleCode", DataTypes.StringType, true),
-                DataTypes.createStructField("billingCycleEffectiveDate", DataTypes.StringType, true),
-                DataTypes.createStructField("solar", DataTypes.StringType, true),
-                DataTypes.createStructField("dataStreamType", DataTypes.StringType, true),
-                DataTypes.createStructField("label", DataTypes.StringType, true)
-        });
-        Dataset<Row> df2=spark.read().format("csv").schema(schemaMeter).option("sep","|").load(filePath);
-        return df2;
     }
 }

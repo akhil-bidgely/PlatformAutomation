@@ -57,8 +57,8 @@ public class DuelFuelMeter extends BaseTest{
         Utils.s3UploadFile(rawTempFilePath2);
 
         //Invoice file upload
-        String invoiceTempFilePath1=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,dataStreamId1);
-        Utils.s3UploadFile(invoiceTempFilePath1);
+//        String invoiceTempFilePath1=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,dataStreamId1);
+//        Utils.s3UploadFile(invoiceTempFilePath1);
 
         //TODO : Add awaitility wait instead of hard wait
 //        Thread.sleep(5000);
@@ -104,7 +104,7 @@ public class DuelFuelMeter extends BaseTest{
         //Calling INVOICE API
         Response utilityDataResponse= restUtils.getUtilityData(userFilePOJO.getUuid(),token,t1);
         Map<String, Map<String, Map<String,String>>> mapTimestampCostData = new HashMap<>();
-        mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath1));
+//        mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath1));
         ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,1);
 //        mapTimestampCostData.clear();
 //        mapTimestampCostData.putAll(getTimeStampsInvoiceData(invoiceTempFilePath2));

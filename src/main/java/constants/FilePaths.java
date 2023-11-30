@@ -8,7 +8,7 @@ public class FilePaths {
     public static final String METER_ENROLLMENT_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/METERENROLL_D_500400306.csv";
     public static final String RAW_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/RAW_D_900_S_500400306.csv";
     public static final String INVOICE_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/INVOICE_500400306.csv";
-    public static final String USER_PREFERENCE_AMI_E_PATH =userdir+"/src/test/resources/Ameren/Single Meter/AMI_E/USER_PREFS_500400306.csv";
+    public static final String USER_PREFERENCE_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/USER_PREFS_500400306.csv";
 
     //AMR_E filePaths
     public static final String USER_ENROLLMENT_AMR_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMR_E/USERENROLL_D_500300208.csv";
@@ -34,10 +34,10 @@ public class FilePaths {
 
     //Duel Fuel Meter
     //AMR_E+AMR_G filePaths
-    public static final String USER_ENROLLMENT_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/ameren/Dual Fuel/AMRE+AMRG/USERENROLL_D_500300206.csv";
-    public static final String METER_ENROLLMENT_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/ameren/Dual Fuel/AMRE+AMRG/METERENROLL_D_500300206.csv";
-    public static final String RAW1_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/ameren/Dual Fuel/AMRE+AMRG/RAW_D_86400_S_5003002061_AMR.csv";
-    public static final String RAW2_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/ameren/Dual Fuel/AMRE+AMRG/RAW_D_86400_S_500300206_AMR.csv";
-    public static final String INVOICE1_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/ameren/Dual Fuel/AMRE+AMRG/INVOICE_500300206.csv";
+    public static final String USER_ENROLLMENT_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/Ameren/DualFuel/AMRE+AMRG/USERENROLL_D_500300206.csv";
+    public static final String METER_ENROLLMENT_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/Ameren/DualFuel/AMRE+AMRG/METERENROLL_D_500300206.csv";
+    public static final String RAW1_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/Ameren/DualFuel/AMRE+AMRG/RAW_D_86400_S_5003002061_AMR.csv";
+    public static final String RAW2_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/Ameren/DualFuel/AMRE+AMRG/RAW_D_86400_S_500300206_AMR.csv";
+    public static final String INVOICE1_AMR_E_AMR_G_PATH =userdir+"/src/test/resources/Ameren/DualFuel/AMRE+AMRG/INVOICE_500300206.csv";
 
 }

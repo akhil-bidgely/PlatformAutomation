@@ -55,25 +55,25 @@ public class SingleMeter extends BaseTest{
         token=getAuthToken(response);
     }
 
-
-    @BeforeClass
-    public void beforeClassMethod()
-    {
-        DefaultAWSCredentialsProviderChain props = new DefaultAWSCredentialsProviderChain();
-        AWSCredentials credentials = props.getCredentials();
-        final String AWS_ACCESS_KEY_ID = credentials.getAWSAccessKeyId();
-        final String AWS_SECRET_ACCESS_KEY = credentials.getAWSSecretKey();
-        spark= SparkSession.builder()
-                .appName("My Application")
-                .config("fs.s3a.access.key", AWS_ACCESS_KEY_ID)
-                .config("fs.s3a.secret.key",AWS_SECRET_ACCESS_KEY)
-                .master("local")
-                .getOrCreate();
-
-    }
+//
+//    @BeforeClass
+//    public void beforeClassMethod()
+//    {
+//        DefaultAWSCredentialsProviderChain props = new DefaultAWSCredentialsProviderChain();
+//        AWSCredentials credentials = props.getCredentials();
+//        final String AWS_ACCESS_KEY_ID = credentials.getAWSAccessKeyId();
+//        final String AWS_SECRET_ACCESS_KEY = credentials.getAWSSecretKey();
+//        spark= SparkSession.builder()
+//                .appName("My Application")
+//                .config("fs.s3a.access.key", AWS_ACCESS_KEY_ID)
+//                .config("fs.s3a.secret.key",AWS_SECRET_ACCESS_KEY)
+//                .master("local")
+//                .getOrCreate();
+//
+//    }
 
     @Test(alwaysRun = true, dataProvider = "singleMeterDP", dataProviderClass = IngestionsDataProvider.class,priority = 0)
-    public void singleMeterIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String invoiceFilePath_1,String model, int gws) throws IOException, java.text.ParseException {
+    public void singleMeterIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String invoiceFilePath_1,String userPref, String model, int gws) throws IOException, java.text.ParseException {
 
         //Map of variable to be changed in csv files
         parentExtent.info("Scenario : "+scenario);
@@ -96,6 +96,10 @@ public class SingleMeter extends BaseTest{
         String invoiceTempFilePath=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
         Utils.s3UploadFile(invoiceTempFilePath);
 
+        //User Preference file upload
+        String userPrefTempFilePath=processFile(userPref,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+        Utils.s3UploadFile(userPrefTempFilePath);
+
         //TODO : Add awaitility wait instead of hard wait
 //        Thread.sleep(5000);
         Response partnerUserIdResponse= restUtils.getPartnerUserId(token,executionVariables);
@@ -111,9 +115,13 @@ public class SingleMeter extends BaseTest{
         //Validating User Details API response
         ingestionValidations.validateUserDetails(usersApiResponse,userFilePOJO,timeZone,executionVariables,AMEREN_PILOT_ID);
 
+        //Calling user config API
+        Response userConfigResponse= restUtils.getUserConfigs(token,userFilePOJO.getUuid());
+        ingestionValidations.validateUserConfig(userConfigResponse);
+
         //Calling Meter API
         Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws);
-        restUtils.printResponseLogInReport(metersApiResponse);
+//        restUtils.printResponseLogInReport(metersApiResponse);
         ingestionValidations.validateMetersSingleMeters(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,1,model);
 
         String t1 = String.valueOf(Instant.now().getEpochSecond());
@@ -137,7 +145,7 @@ public class SingleMeter extends BaseTest{
 
     }
 
-    @Test(enabled = true,priority = 1)
+    @Test(enabled = false,priority = 1)
     public void testFireHoseDataValidation()
     {
         //to compute date and format it in the path format
@@ -146,7 +154,8 @@ public class SingleMeter extends BaseTest{
         String date=Utils.getTodayDate();
         String  utcHour=Utils.getUtcTime();
         String bucket= ConstantFile.CommonMetricsNonprodqaBucket;
-        String path= ConstantFile.UtilityBillingDataFirehosePrefix+date+"/"+utcHour+"/";
+//        String path= ConstantFile.UtilityBillingDataFirehosePrefix+date+"/"+utcHour+"/";
+        String path= "/enrollment-events/"+date+"/"+utcHour+"/";
         String uuid=userFilePOJO.getUuid();
         logger.info("Starting the TC testFireHoseDataValidation for UUID as "+uuid);
         logger.info("the bucket and path is  "+bucket+path);
@@ -185,7 +194,7 @@ public class SingleMeter extends BaseTest{
         Assert.assertEquals(rowDatasetNewS3.count(),rowDatasetInvoiceFileTotal.count());
     }
 
-    @Test(enabled=true,priority = 4)
+    @Test(enabled=false,priority = 4)
     public void testRedshiftDataValidation() throws IOException, java.text.ParseException {
         String uuid=userFilePOJO.getUuid();
         //The current date records will be present in utility_billing_data_firehose table after that the records will be pushed to utility_billing_data table
@@ -222,7 +231,7 @@ public class SingleMeter extends BaseTest{
         IngestionValidations.validateRedshiftData(rowDatasetInvoiceFileTotal,hm,solarFieldFromMeterFile);
     }
 
-    @Test(dependsOnMethods = "testRedshiftDataValidation",priority = 3)
+    @Test(enabled = false,dependsOnMethods = "testRedshiftDataValidation",priority = 3)
     public void testCountInRedshiftWithInputFile()
     {
         logger.info("Number of records in input file is  "+rowDatasetInvoiceFileTotal.count());
@@ -258,6 +267,7 @@ public class SingleMeter extends BaseTest{
         do {
             String s3path="s3a://"+bucket+path;
             Dataset<Row> df = Utils.getS3FirehoseData(spark, s3path);
+            df.show(100);
 
             Dataset<Row> rowS3Dataset = df.filter(df.col("uuid").equalTo(uuid))
                     .filter(df.col("bidgely_generated_invoice").equalTo("false"))

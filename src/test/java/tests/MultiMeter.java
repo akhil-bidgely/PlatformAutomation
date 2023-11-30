@@ -31,7 +31,7 @@ public class MultiMeter extends BaseTest{
         token=getAuthToken(response);
     }
 
-    @Test(enabled = false,alwaysRun = true, dataProvider = "multimeterDP", dataProviderClass = IngestionsDataProvider.class)
+    @Test(enabled = true,alwaysRun = true, dataProvider = "multimeterDP", dataProviderClass = IngestionsDataProvider.class)
     public void multiMeterIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String rawFilePath_2, String invoiceFilePath_1,
                                      String invoiceFilePath_2,String model, int gws) throws IOException, java.text.ParseException {
 

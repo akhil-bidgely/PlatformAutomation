@@ -16,6 +16,7 @@ import org.testng.asserts.SoftAssert;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -236,7 +237,7 @@ public class IngestionValidations {
                 //to verify the consumption values
                 logger.info("the consumption values in s3 and input file is " + row.getAs("consumption").toString() + " " + row.getAs("consumption_value").toString());
                 softAssert.assertEquals(row.getAs("consumption").toString(), row.getAs("consumption_value").toString(), "Consumption Not getting matched"
-                        + row.getAs("consumption").toString() + " " + row.getAs("consumption_value"));
+                        + row.getAs("consumption").toString() + " "     + row.getAs("consumption_value"));
 
                 //to verify the cost values
                 logger.info("the cost values in s3 and input file is " + row.getAs("cost").toString() + " " + row.getAs("currencyCost").toString());
@@ -275,7 +276,7 @@ public class IngestionValidations {
             }
             else
             {
-                logger.info("Records not present in S3 bucket");
+                logger.info("Records not present in S3 bucket") ;
                 logger.info(row.toString());
             }
 
@@ -353,5 +354,33 @@ public class IngestionValidations {
         }
     }
 
+
+    public static void validateUserConfig(Response userConfigResponse) throws ParseException {
+        JSONObject jsonObject= new JSONObject(userConfigResponse.asString());
+        Map<String,Object> expectedValueMap = new HashMap<>();
+        String ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.SUMMER_ALERT.ELECTRIC.OPT_IN").replace("\\\\","");
+        String ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.SUMMER_ALERT.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String USER_WELCOME_OPT_IN=jsonObject.getString("event_subscriptions.USER_WELCOME.OPT_IN").replace("\\\\","");
+        String USER_WELCOME_OPT_OUT=jsonObject.getString("event_subscriptions.USER_WELCOME.OPT_OUT").replace("\\\\","");
+        String BILL_PROJECTION_ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.BILL_PROJECTION.ELECTRIC.OPT_IN").replace("\\\\","");
+        String BILL_PROJECTION_ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.BILL_PROJECTION.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String BUDGET_ALERT_ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.BUDGET_ALERT.ELECTRIC.OPT_IN").replace("\\\\","");
+        String BUDGET_ALERT_ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.BUDGET_ALERT.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String WINTER_ALERT_ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.WINTER_ALERT.ELECTRIC.OPT_IN").replace("\\\\","");
+        String WINTER_ALERT_ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.WINTER_ALERT.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String AMI_WELCOME_OPT_IN=jsonObject.getString("event_subscriptions.AMI_WELCOME.OPT_IN").replace("\\\\","");
+        String AMI_WELCOME_OPT_OUT=jsonObject.getString("event_subscriptions.AMI_WELCOME.OPT_OUT").replace("\\\\","");
+
+
+        System.out.println(ELECTRIC_OPT_IN);
+        JSONObject json = new JSONObject(ELECTRIC_OPT_IN);
+        String userPref="";
+
+        JSONArray jsonArray= json.getJSONArray("kvs");
+        for(Object jsonObj:jsonArray){
+            JSONObject obj=(JSONObject) jsonObj;
+            userPref= obj.getString("val");
+            }
+        }
 
 }

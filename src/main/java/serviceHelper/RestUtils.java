@@ -54,6 +54,20 @@ public class RestUtils {
         return response;
 
     }
+    public Response getUserConfigs(String token, String uuid)
+    {
+
+        RequestSpecification given = RestAssured.given();
+        Response response = given.auth().oauth2(token)
+                .baseUri(BASE_URL).basePath(USER_CONFIG).pathParam("uuid",uuid)
+                .contentType(ContentType.JSON)
+                .log().all()
+                .get();
+        printRequestLogInReport(given, "User Config API");
+        printResponseLogInReport(response);
+        return response;
+
+    }
 
     public Response getUsers(String uuid, String token)
     {
