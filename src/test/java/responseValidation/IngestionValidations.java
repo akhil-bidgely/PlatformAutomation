@@ -16,6 +16,7 @@ import org.testng.asserts.SoftAssert;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,11 +61,30 @@ public class IngestionValidations {
 //        File schema = new File("src/test/resources/Ameren/AMI_E/SchemaFiles/userDetails.json");
 //        response.then().body(JsonSchemaValidator.matchesJsonSchema(schema));
 
-        softAssert.assertAll();
-
     }
 
-    public void validateMeters(Response response, String scenario, String uuid, String pilotId, Map<String, String> executionVariables, MeterFilePOJO meterFilePOJO, int gws, int meters, String model){
+    public void validateMetersSingleMeters(Response response, String scenario, String uuid, String pilotId, Map<String, String> executionVariables, MeterFilePOJO meterFilePOJO, int gws, int meters, String model){
+
+        String path="/users/"+uuid+"/homes/1/gws/"+gws+"/meters/"+1;
+
+        Map<String,Object> expectedValueMap = new HashMap<>();
+        if(scenario.equals("AMI_E") || scenario.equals("AMI_E+AMI_E")){
+            expectedValueMap.put(path+".model", "GreenButton");
+        }else if(scenario.equals("AMR_E") || scenario.equals("AMR_E+AMR_G")){
+            expectedValueMap.put(path+".model", "GB_MONTH");
+        }
+        if(gws==3 || gws==2){
+            meterFilePOJO.setService_type("ELECTRIC");
+        } else if (gws==4) {
+            meterFilePOJO.setService_type("GAS");
+        }
+//            String dataStreamId=String.valueOf(Long.valueOf(executionVariables.get("dataStreamId")));
+        expectedValueMap.put(path+".token", pilotId+":_"+executionVariables.get("partnerUserId")+"_"+executionVariables.get("premiseId")+"_"+executionVariables.get("dataStreamId")+"_"+meterFilePOJO.getMeter_type());
+        expectedValueMap.put(path+".id", meterFilePOJO.getService_type()+(0));
+        Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
+    }
+
+    public void validateMetersMultiMeter(Response response, String scenario, String uuid, String pilotId, Map<String, String> executionVariables, MeterFilePOJO meterFilePOJO, int gws, int meters, String model){
 
         for(int i=1;i<=meters;i++){
             String path="/users/"+uuid+"/homes/1/gws/"+gws+"/meters/"+i;
@@ -72,8 +92,37 @@ public class IngestionValidations {
             Map<String,Object> expectedValueMap = new HashMap<>();
             if(scenario.equals("AMI_E") || scenario.equals("AMI_E+AMI_E")){
                 expectedValueMap.put(path+".model", "GreenButton");
-            }else if(scenario.equals("AMR_E")){
+            }else if(scenario.equals("AMR_E") || scenario.equals("AMR_E+AMR_G")){
                 expectedValueMap.put(path+".model", "GB_MONTH");
+            }
+
+            if(gws==3 || gws==2){
+                meterFilePOJO.setService_type("ELECTRIC");
+            } else if (gws==4) {
+                meterFilePOJO.setService_type("GAS");
+            }
+            String dataStreamId=String.valueOf(Long.valueOf(executionVariables.get("dataStreamId"))+(i-1));
+            expectedValueMap.put(path+".token", pilotId+":_"+executionVariables.get("partnerUserId")+"_"+executionVariables.get("premiseId")+"_"+dataStreamId+"_"+meterFilePOJO.getMeter_type());
+            expectedValueMap.put(path+".id", meterFilePOJO.getService_type()+(i-1));
+            Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
+        }
+    }
+
+    public void validateMetersDuelFuel(Response response, String scenario, String uuid, String pilotId, Map<String, String> executionVariables, MeterFilePOJO meterFilePOJO, int gws, int meters, String model){
+
+        for(int i=1;i<=meters;i++){
+            String path="/users/"+uuid+"/homes/1/gws/"+gws+"/meters/"+i;
+
+            Map<String,Object> expectedValueMap = new HashMap<>();
+            if(scenario.equals("AMI_E") || scenario.equals("AMI_E+AMI_E")){
+                expectedValueMap.put(path+".model", "GreenButton");
+            }else if(scenario.equals("AMR_E") || scenario.equals("AMR_E+AMR_G")){
+                expectedValueMap.put(path+".model", "GB_MONTH");
+            }
+            if(gws==3){
+                meterFilePOJO.setService_type("ELECTRIC");
+            } else if (gws==4) {
+                meterFilePOJO.setService_type("GAS");
             }
             String dataStreamId=String.valueOf(Long.valueOf(executionVariables.get("dataStreamId"))+(i-1));
             expectedValueMap.put(path+".token", pilotId+":_"+executionVariables.get("partnerUserId")+"_"+executionVariables.get("premiseId")+"_"+dataStreamId+"_"+meterFilePOJO.getMeter_type());
@@ -93,22 +142,23 @@ public class IngestionValidations {
         JSONArray obj= new JSONArray(response.asString());
         for (Map.Entry<String, String> csvset : mapTimestampConsumption.entrySet()) {
             System.out.println(csvset.getKey() + " = " + csvset.getValue());
-//            Map<String,Object> expectedValueMap = new HashMap<>();
+            Map<String,Object> expectedValueMap = new HashMap<>();
+            long timeIncsv= ((Long.parseLong(csvset.getKey())+23400)-5400);
             for(int i=0;i<obj.length();i++){
                 JSONObject jsonObject=obj.getJSONObject(i);
                 long timeInResp= jsonObject.getLong("time");
-                long timeIncsv= ((Long.parseLong(csvset.getKey())+23400)-5400);
                 if(timeInResp==timeIncsv){
-//                    expectedValueMap.put("",String.valueOf(String.format("%.4f", Float.valueOf(csvset.getValue()))));
-                    Assert.assertEquals(String.valueOf(String.format("%.4f",jsonObject.getFloat("value")/1000)),String.valueOf(String.format("%.4f", Float.valueOf(csvset.getValue()))));
+                    String path="["+(i)+"]"+".value";
+                    expectedValueMap.put(path,Float.valueOf(csvset.getValue())*1000);
+//                    Assert.assertEquals(String.valueOf(String.format("%.4f" ,jsonObject.getFloat("value")/1000)),String.valueOf(String.format("%.4f", Float.valueOf(csvset.getValue()))));
+                    break;
                 }
             }
-//            Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
+            Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
         }
-        softAssert.assertAll();
     }
 
-    public void validateUtilityData(Response response, Map<String, Map<String, Map<String,String>>> mapTimestampInvoiceData) {
+    public void validateUtilityData(Response response, Map<String, Map<String, Map<String,String>>> mapTimestampInvoiceData, int meterId) {
 
         JSONObject jsonObj = new JSONObject(response.asString());
 
@@ -122,6 +172,7 @@ public class IngestionValidations {
             String mapFirstKey= firstEntry.getKey();
             Map<String,String> firstMapBlock = map1.get(mapFirstKey);
 
+            parentExtent.info("Validating the Invoice API data for timeStamp"+key);
             expectedValueMap.put(timeStamp+".billingStartTs", Integer.valueOf(firstMapBlock.get("bc_start_date")));
             expectedValueMap.put(timeStamp+".billingEndTs", Integer.valueOf(firstMapBlock.get("bc_end_date")));
             expectedValueMap.put(timeStamp+".value", Float.valueOf(firstMapBlock.get("kWh_Consumption")));
@@ -133,6 +184,7 @@ public class IngestionValidations {
                 expectedValueMap.put(timeStamp+".gasValue", "0.0");
                 expectedValueMap.put(timeStamp+".gasCost", "0.0");
             }
+            Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
 
             JSONArray jsonArray1 = consolidatedData.getJSONArray("invoiceDataList");
 
@@ -140,13 +192,12 @@ public class IngestionValidations {
                 JSONObject jsonObject = jsonArray1.getJSONObject(i);
                 String chargeT= getChecker(jsonObject);
                 parentExtent.info("Validating  : " + chargeT);
-                parentExtent.createNode(chargeT);
                 Map<String, String> mapTemp= map1.get(chargeT);
                 Map<String,Object> expectedValMap = new HashMap<>();
 
                 expectedValMap.put(timeStamp+".invoiceDataList["+i+"].cost", Float.valueOf(mapTemp.get("dollar_cost")));
                 expectedValMap.put(timeStamp+".invoiceDataList["+i+"].consumption", Float.valueOf(mapTemp.get("kWh_Consumption")));
-                expectedValMap.put(timeStamp+".invoiceDataList["+i+"].meterId", 1);
+                expectedValMap.put(timeStamp+".invoiceDataList["+i+"].meterId", meterId);
 
                 if(firstMapBlock.get("meter_type").equals("AMI_E")){
                     expectedValMap.put(timeStamp+".invoiceDataList["+i+"].measurementType", "Electricity");
@@ -158,8 +209,7 @@ public class IngestionValidations {
 
                 Utils.assertExpectedValuesWithJsonPath(response,expectedValMap);
             }
-            Utils.assertExpectedValuesWithJsonPath(response,expectedValueMap);
-            softAssert.assertAll();
+
         }
     }
     public String getChecker(JSONObject jsonObject){
@@ -187,7 +237,7 @@ public class IngestionValidations {
                 //to verify the consumption values
                 logger.info("the consumption values in s3 and input file is " + row.getAs("consumption").toString() + " " + row.getAs("consumption_value").toString());
                 softAssert.assertEquals(row.getAs("consumption").toString(), row.getAs("consumption_value").toString(), "Consumption Not getting matched"
-                        + row.getAs("consumption").toString() + " " + row.getAs("consumption_value"));
+                        + row.getAs("consumption").toString() + " "     + row.getAs("consumption_value"));
 
                 //to verify the cost values
                 logger.info("the cost values in s3 and input file is " + row.getAs("cost").toString() + " " + row.getAs("currencyCost").toString());
@@ -226,7 +276,7 @@ public class IngestionValidations {
             }
             else
             {
-                logger.info("Records not present in S3 bucket");
+                logger.info("Records not present in S3 bucket") ;
                 logger.info(row.toString());
             }
 
@@ -304,5 +354,33 @@ public class IngestionValidations {
         }
     }
 
+
+    public static void validateUserConfig(Response userConfigResponse) throws ParseException {
+        JSONObject jsonObject= new JSONObject(userConfigResponse.asString());
+        Map<String,Object> expectedValueMap = new HashMap<>();
+        String ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.SUMMER_ALERT.ELECTRIC.OPT_IN").replace("\\\\","");
+        String ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.SUMMER_ALERT.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String USER_WELCOME_OPT_IN=jsonObject.getString("event_subscriptions.USER_WELCOME.OPT_IN").replace("\\\\","");
+        String USER_WELCOME_OPT_OUT=jsonObject.getString("event_subscriptions.USER_WELCOME.OPT_OUT").replace("\\\\","");
+        String BILL_PROJECTION_ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.BILL_PROJECTION.ELECTRIC.OPT_IN").replace("\\\\","");
+        String BILL_PROJECTION_ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.BILL_PROJECTION.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String BUDGET_ALERT_ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.BUDGET_ALERT.ELECTRIC.OPT_IN").replace("\\\\","");
+        String BUDGET_ALERT_ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.BUDGET_ALERT.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String WINTER_ALERT_ELECTRIC_OPT_IN=jsonObject.getString("event_subscriptions.WINTER_ALERT.ELECTRIC.OPT_IN").replace("\\\\","");
+        String WINTER_ALERT_ELECTRIC_OPT_OUT=jsonObject.getString("event_subscriptions.WINTER_ALERT.ELECTRIC.OPT_OUT").replace("\\\\","");
+        String AMI_WELCOME_OPT_IN=jsonObject.getString("event_subscriptions.AMI_WELCOME.OPT_IN").replace("\\\\","");
+        String AMI_WELCOME_OPT_OUT=jsonObject.getString("event_subscriptions.AMI_WELCOME.OPT_OUT").replace("\\\\","");
+
+
+        System.out.println(ELECTRIC_OPT_IN);
+        JSONObject json = new JSONObject(ELECTRIC_OPT_IN);
+        String userPref="";
+
+        JSONArray jsonArray= json.getJSONArray("kvs");
+        for(Object jsonObj:jsonArray){
+            JSONObject obj=(JSONObject) jsonObj;
+            userPref= obj.getString("val");
+            }
+        }
 
 }

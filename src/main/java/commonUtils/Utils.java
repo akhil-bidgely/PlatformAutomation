@@ -144,6 +144,9 @@ public class Utils {
                         userFilePOJO.setState(updatedLineArr[12]);
                         userFilePOJO.setPostal_code(updatedLineArr[13]);
 
+                    }else if (fileNameToUpdate.contains("USER_PREFS")) {
+                        updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1]
+                                , executionVariables.get("partnerUserId")).replace(fileParamTemp[2],executionVariables.get("premiseId"));
                     } else if (fileNameToUpdate.contains("METER")) {
                         updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
                                 .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],dataStreamId);
@@ -152,7 +155,7 @@ public class Utils {
                                 .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],String.valueOf(dataStreamIdTemp));
 
                         String[] updatedLineArr = updatedLine.split("\\|");
-                        meterFilePOJO.setService_type(updatedLineArr[4]);
+//                        meterFilePOJO.setService_type(updatedLineArr[4]);
                         meterFilePOJO.setMeter_type(updatedLineArr[12]);
                     } else {
                         updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
@@ -257,11 +260,7 @@ public class Utils {
         Map<String,String> cMap= new HashMap<>();
         String[] fileParam = line.split("\\|");
         cMap.put("bc_start_date", String.valueOf(getEpochTimeFromDate(fileParam[6])));
-        parentExtent.info("bc_start_date in sheet :"+fileParam[6]);
-        parentExtent.info("bc_start_date converted:"+String.valueOf(getEpochTimeFromDate(fileParam[6])));
         cMap.put("bc_end_date", String.valueOf(getEpochTimeFromDate(fileParam[7])));
-        parentExtent.info("bc_end_date in sheet :"+fileParam[7]);
-        parentExtent.info("bc_end_date converted :"+String.valueOf(getEpochTimeFromDate(fileParam[7])));
         cMap.put("charge_name", fileParam[9]);
         cMap.put("charge_type", fileParam[10]);
         cMap.put("kWh_Consumption", fileParam[11]);
@@ -342,6 +341,28 @@ public class Utils {
 
     }
 
+    public static Dataset<Row> readMeterInputFile(SparkSession spark,String filePath)
+    {
+        StructType schemaMeter = DataTypes.createStructType(new StructField[] {
+                DataTypes.createStructField("customerId", DataTypes.StringType, true),
+                DataTypes.createStructField("partnerId", DataTypes.StringType, true),
+                DataTypes.createStructField("premiseId", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamId", DataTypes.StringType, true),
+                DataTypes.createStructField("fuelType", DataTypes.StringType, true),
+                DataTypes.createStructField("serviceAgreementStDate", DataTypes.StringType, true),
+                DataTypes.createStructField("serviceAgreementEnDate", DataTypes.StringType, true),
+                DataTypes.createStructField("ratePlanId", DataTypes.StringType, true),
+                DataTypes.createStructField("ratePlanEffectiveDate", DataTypes.StringType, true),
+                DataTypes.createStructField("billingCycleCode", DataTypes.StringType, true),
+                DataTypes.createStructField("billingCycleEffectiveDate", DataTypes.StringType, true),
+                DataTypes.createStructField("solar", DataTypes.StringType, true),
+                DataTypes.createStructField("dataStreamType", DataTypes.StringType, true),
+                DataTypes.createStructField("label", DataTypes.StringType, true)
+        });
+        Dataset<Row> df2=spark.read().format("csv").schema(schemaMeter).option("sep","|").load(filePath);
+        return df2;
+    }
+
     public static Dataset<Row> readInvoiceInputFile(SparkSession spark, String filePath)
     {
         //To define the schema of the input invoice File
@@ -365,27 +386,5 @@ public class Utils {
 
         Dataset<Row> df1=spark.read().format("csv").schema(schema) .option("sep","|").load(filePath);
         return df1;
-    }
-
-    public static Dataset<Row> readMeterInputFile(SparkSession spark,String filePath)
-    {
-        StructType schemaMeter = DataTypes.createStructType(new StructField[] {
-                DataTypes.createStructField("customerId", DataTypes.StringType, true),
-                DataTypes.createStructField("partnerId", DataTypes.StringType, true),
-                DataTypes.createStructField("premiseId", DataTypes.StringType, true),
-                DataTypes.createStructField("dataStreamId", DataTypes.StringType, true),
-                DataTypes.createStructField("fuelType", DataTypes.StringType, true),
-                DataTypes.createStructField("serviceAgreementStDate", DataTypes.StringType, true),
-                DataTypes.createStructField("serviceAgreementEnDate", DataTypes.StringType, true),
-                DataTypes.createStructField("ratePlanId", DataTypes.StringType, true),
-                DataTypes.createStructField("ratePlanEffectiveDate", DataTypes.StringType, true),
-                DataTypes.createStructField("billingCycleCode", DataTypes.StringType, true),
-                DataTypes.createStructField("billingCycleEffectiveDate", DataTypes.StringType, true),
-                DataTypes.createStructField("solar", DataTypes.StringType, true),
-                DataTypes.createStructField("dataStreamType", DataTypes.StringType, true),
-                DataTypes.createStructField("label", DataTypes.StringType, true)
-        });
-        Dataset<Row> df2=spark.read().format("csv").schema(schemaMeter).option("sep","|").load(filePath);
-        return df2;
     }
 }

@@ -10,4 +10,5 @@ public class Endpoints {
     public static final  String GENERATE_TOKEN="/oauth/token?grant_type=client_credentials&scope=all";
     public static final  String GB_DISAGG="/2.1/gb-disagg/process-request/{uuid}/{hid}?start={t0}&end={t1}";
     public static final  String UTILITY_DATA="/billingdata/users/{uuid}/homes/1/utilitydata";
+    public static final  String USER_CONFIG="/entities/user/{uuid}/configs";
 }
