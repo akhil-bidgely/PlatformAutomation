@@ -15,12 +15,12 @@ public class commonuti {
 //        DefaultAWSCredentialsProviderChain props = new DefaultAWSCredentialsProviderChain();
 
 //        AWSCredentials credentials = props.getCredentials();// JDBC driver and database URL
-        String jdbcUrl = "jdbc:redshift://na-rs1.ctxwwf9dwnm1.us-east-1.redshift.amazonaws.com:5439/bdw";
-        String username = "read_only_user";
-        String password = "IamR34d0nly";
+        String jdbcUrl = "";
+        String username = "";
+        String password = "";
 
         // Register JDBC driver
-        Class.forName("com.amazon.redshift.jdbc.Driver");
+        Class.forName("");
 
         Properties props = new Properties();
         props.setProperty("user", username);
