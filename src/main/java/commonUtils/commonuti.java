@@ -41,8 +41,8 @@ public class commonuti {
             // Access individual columns using resultSet.getXXX(columnIndex) methods
             System.out.println("uuid : "+resultSet.getString("uuid"));
 
-//        final String AWS_ACCESS_KEY_ID = "AKIA4PGQTPFGB7QIPCCI";
-//        final String AWS_SECRET_ACCESS_KEY = "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";
+//        final String AWS_ACCESS_KEY_ID = "";
+//        final String AWS_SECRET_ACCESS_KEY = "";
 //
 //        System.out.println(AWS_ACCESS_KEY_ID+"======="+AWS_SECRET_ACCESS_KEY);
 //        SparkSession spark= SparkSession.builder()
