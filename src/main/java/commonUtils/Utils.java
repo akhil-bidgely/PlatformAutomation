@@ -37,7 +37,7 @@ public class Utils {
 
     public static void s3UploadFile(String filePath){
         Regions clientRegion = Regions.DEFAULT_REGION;
-        String bucketName = "bidgely-amerenres-nonprodqa";
+        String bucketName = "bidgely-ameren-dev-external/RES/Incoming";
         String stringObjKeyName = "";
         String[] fileNameTemp  = filePath.split("/");
         String fileObjKeyName = fileNameTemp[fileNameTemp.length-1];
@@ -160,6 +160,62 @@ public class Utils {
                     } else {
                         updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1], executionVariables.get("partnerUserId"))
                                 .replace(fileParamTemp[2],executionVariables.get("premiseId")).replace(fileParamTemp[3],dataStreamId);
+                    }
+                    updatedContext.append(updatedLine + System.lineSeparator());
+                    line = br.readLine();
+                    k++;
+                }
+            }
+
+            String contentToWrite = updatedContext.toString();
+            contentToWrite = contentToWrite.substring(0, contentToWrite.lastIndexOf(System.lineSeparator()));
+
+            writer.write(contentToWrite);
+            br.close();
+            writer.close();
+
+            return updatedFile.getAbsolutePath();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+
+    public static String processFileOpower(String fileToUpdate, Map<String,String> executionVariables, UserFilePOJO userFilePOJO, MeterFilePOJO meterFilePOJO, String dataStreamId) throws IOException {
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(fileToUpdate));
+            String line = br.readLine();
+            String[] fileParam = line.split("\\|", 5);
+
+            String fileNameToUpdate=FilenameUtils.getBaseName(fileToUpdate);
+
+            File updatedFile = File.createTempFile(fileNameToUpdate, ".csv");
+            updatedFile.deleteOnExit();
+            FileWriter writer = new FileWriter(updatedFile);
+            System.out.println(updatedFile.getAbsolutePath());
+            StringBuilder updatedContext = new StringBuilder();
+            for (int i = 0; i < fileParam.length - 1; i++) {
+                int k=0;
+                while (line != null) {
+//                    long dataStreamIdTemp=Long.valueOf(executionVariables.get("dataStreamId"))+k;
+                    String[] fileParamTemp = line.split("\\|", 5);
+                    String updatedLine = "";
+                    if(fileNameToUpdate.contains("OPower")){
+                        updatedLine = line.replace(fileParamTemp[0], executionVariables.get("customerId")).replace(fileParamTemp[1]
+                                , executionVariables.get("partnerUserId")).replace(fileParamTemp[2],executionVariables.get("premiseId"));
+                        String[] updatedLineArr = updatedLine.split("\\|");
+
+//                        userFilePOJO.setEmail(updatedLineArr[4]);
+//                        userFilePOJO.setFirst_name(updatedLineArr[5]);
+//                        userFilePOJO.setLast_name(updatedLineArr[6]);
+//                        userFilePOJO.setAddress_1(updatedLineArr[7]);
+//                        userFilePOJO.setCity(updatedLineArr[11]);
+//                        userFilePOJO.setState(updatedLineArr[12]);
+//                        userFilePOJO.setPostal_code(updatedLineArr[13]);
+
                     }
                     updatedContext.append(updatedLine + System.lineSeparator());
                     line = br.readLine();

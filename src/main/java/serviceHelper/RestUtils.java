@@ -165,12 +165,17 @@ public class RestUtils {
 
     public Response getPartnerUserId(String token, Map<String, String> executionVariables)
     {
+        System.out.println("partnerUserid" +executionVariables.get("partnerUserId"));
+        System.out.println("customerId" +executionVariables.get("customerId"));
+        System.out.println("premiseId" +executionVariables.get("premiseId"));
+        System.out.println("dataStreamId" +executionVariables.get("dataStreamId"));
+
         RequestSpecification given = RestAssured.given();
         Response response = given.auth().oauth2(token).baseUri(BASE_URL).basePath(PARTNER_USERID).queryParam("partnerUserId",executionVariables.get("partnerUserId"))
                 .contentType(ContentType.JSON).log().all()
                 .get();
-        printRequestLogInReport(given, "Partner User Id API");
-        printResponseLogInReport(response);
+//        printRequestLogInReport(given, "Partner User Id API");
+//        printResponseLogInReport(response);
         return response;
     }
 

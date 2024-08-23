@@ -5,6 +5,7 @@ public class FilePaths {
 
     //AMI_E filePaths
     public static final String USER_ENROLLMENT_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/USERENROLL_D_500400306.csv";
+    public static final String OPWER_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/OPower020118_BidgelyBillFile_20230628021040-012.csv";
     public static final String METER_ENROLLMENT_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/METERENROLL_D_500400306.csv";
     public static final String RAW_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/RAW_D_900_S_500400306.csv";
     public static final String INVOICE_AMI_E_PATH =userdir+"/src/test/resources/Ameren/SingleMeter/AMI_E/INVOICE_500400306.csv";

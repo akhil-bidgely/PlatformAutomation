@@ -2,9 +2,27 @@ package tests;
 
 import com.amazonaws.thirdparty.jackson.databind.JsonNode;
 import com.amazonaws.thirdparty.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import constants.ConstantFile;
 import constants.FilePaths;
 import dataProviderFile.IngestionsDataProvider;
+import io.restassured.path.json.JsonPath;
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+
+import java.io.*;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -17,16 +35,20 @@ import org.apache.spark.sql.SparkSession;
 import commonUtils.JsonUtils;
 import commonUtils.Utils;
 import org.testng.annotations.*;
+import pojoClasses.UserFilePOJO;
 import responseValidation.IngestionValidations;
 
-import java.io.IOException;
+import javax.ws.rs.core.UriBuilder;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static commonUtils.JsonUtils.getAuthToken;
 import static commonUtils.Utils.*;
@@ -47,13 +69,13 @@ public class SingleMeter extends BaseTest{
     Dataset<Row> dfMeterFile;
 
     JsonNode jsonArrayFromRedshift;
+    Map<String, Object[]> zipData = new HashMap<String, Object[]>();
 
-
-    @BeforeMethod
-    public void generateToken() {
-        Response response= restUtils.generateToken();
-        token=getAuthToken(response);
-    }
+//    @BeforeMethod
+//    public void generateToken() {
+//        Response response= restUtils.generateToken();
+//        token=getAuthToken(response);
+//    }
 
 //
 //    @BeforeClass
@@ -72,76 +94,187 @@ public class SingleMeter extends BaseTest{
 //
 //    }
 
-    @Test(alwaysRun = true, dataProvider = "singleMeterDP", dataProviderClass = IngestionsDataProvider.class,priority = 0)
-    public void singleMeterIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String invoiceFilePath_1,String userPref, String model, int gws) throws IOException, java.text.ParseException {
+    @Test(alwaysRun = true, dataProvider = "zipDP",priority = 0,dataProviderClass = IngestionsDataProvider.class)
+    public void zipcodeCheck (String zip) throws IOException {
+        String zipcode=fixZipCode("CA",zip);
+        URI urlString = UriBuilder.
+                fromPath(String.format("//api.weathersource.com/v1/%s/postal_codes/%s.json","530acd897436d6186116",zipcode+","+"CA")).
+                scheme("https").build();
+        System.out.println(urlString);
+        URL url = new URL(urlString.toString());
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        if(connection.getResponseCode()==200){
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            // Parse JSON response
+            Gson gson = new Gson();
+            JsonObject jsonResponse = gson.fromJson(response.toString(), JsonObject.class);
+        System.out.println(connection.getResponseCode());
+
+            // Get parameters from JSON
+            String postalCode = jsonResponse.get("postal_code").getAsString();
+            String country = jsonResponse.get("country").getAsString();
+            String latitude = jsonResponse.get("latitude").getAsString();
+            String longitude = jsonResponse.get("longitude").getAsString();
+            zipData.put(
+                    zip,
+                    new Object[] {postalCode,country,latitude,longitude,urlString.toString()});
+        }else{
+//            Assert.assertTrue(connection.getResponseCode()==200);
+            zipData.put(
+                    zip,
+                    new Object[] {urlString.toString()});
+        }
+    }
+
+    public static String fixZipCode(String country, String zipcode) {
+        // Canada
+        if (country.equals("CA")) {
+            if (!StringUtils.isEmpty(zipcode)) {
+                // remove all whitespaces
+                final String trimmedZipcode = zipcode.replaceAll("\\s", "");
+
+                if (trimmedZipcode.length() == 6) {
+                    zipcode = trimmedZipcode.substring(0, 3).toUpperCase() + " "
+                            + trimmedZipcode.substring(3, 6).toUpperCase();
+                }
+            }
+        }
+        // US
+        if (country.equals("US")) {
+            if ((!StringUtils.isEmpty(zipcode)) && (zipcode.length() < 5)) {
+                zipcode = StringUtils.leftPad(zipcode, 5, '0');
+            }
+            if (zipcode.contains("-")) {
+                zipcode = StringUtils.substringBefore(zipcode, "-");
+            }
+        }
+        return zipcode;
+    }
+//    @AfterClass
+//    public void writeZipDataMap() throws IOException {
+//        writeToExcel(zipData);
+//    }
+
+
+    private void writeToExcel(Map<String, Object[]> zipData) throws IOException {
+        FileOutputStream outputStream = new FileOutputStream("api_data.xlsx");
+
+        XSSFWorkbook xssfWorkbook= new XSSFWorkbook();
+        XSSFSheet sheet= xssfWorkbook.createSheet("sheet1");
+
+        int rowno=1;
+        for(Map.Entry<String, Object[]> entry : zipData.entrySet()) {
+            XSSFRow row=sheet.createRow(rowno++);
+            row.createCell(0).setCellValue(entry.getKey());
+            Object[] values = entry.getValue();
+            int colummnvalue=1;
+            if (values != null) {
+                // Now you can access individual elements of the array
+                for (Object value : values) {
+                    if(value != null){
+                        row.createCell(colummnvalue++).setCellValue(value.toString());
+                    } else {
+                        row.createCell(colummnvalue++).setCellValue("NULL");
+                    }
+                    System.out.println(value.toString());
+                }
+            }
+        }
+        xssfWorkbook.write(outputStream);
+        outputStream.close();
+    }
+
+        @Test(alwaysRun = true, dataProvider = "singleMeterDP", dataProviderClass = IngestionsDataProvider.class,priority = 0)
+    public void singleMeterIngestion (String scenario,String userFilePath, String meterFilePath, String rawFilePath_1, String invoiceFilePath_1,String userPref, String model, int gws) throws IOException, java.text.ParseException, InterruptedException {
 
         //Map of variable to be changed in csv files
-        parentExtent.info("Scenario : "+scenario);
+//        parentExtent.info("Scenario : "+scenario);
         Map<String, String> executionVariables = JsonUtils.getExecutionVariables();
 
         //USERENROLL file upload
-//        UserFilePOJO userFilePOJO= new UserFilePOJO();
+        UserFilePOJO userFilePOJO= new UserFilePOJO();
+            System.out.println("account : "+ executionVariables.get("customerId"));
+            System.out.println("partnerUserId : "+ executionVariables.get("partnerUserId"));
+            System.out.println("premiseId : "+ executionVariables.get("premiseId"));
         String userTempFilePath=processFile(userFilePath,executionVariables,userFilePOJO, meterFilePOJO,executionVariables.get("dataStreamId"));
         Utils.s3UploadFile(userTempFilePath);
-
+//        Utils.s3UploadFile(userFilePath);
+//
         //METERENROLL file upload
-        String meterTempFilePath=processFile(meterFilePath,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
-        Utils.s3UploadFile(meterTempFilePath);
-
-        //RAW file upload
-        String rawTempFilePath=processFile(rawFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
-        Utils.s3UploadFile(rawTempFilePath);
-
-        //Invoice file upload
-        String invoiceTempFilePath=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
-        Utils.s3UploadFile(invoiceTempFilePath);
-
-        //User Preference file upload
-        String userPrefTempFilePath=processFile(userPref,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
-        Utils.s3UploadFile(userPrefTempFilePath);
+//        String meterTempFilePath=processFile(meterFilePath,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+//        Utils.s3UploadFile(meterTempFilePath);
+//
+////        //RAW file upload
+//        String rawTempFilePath=processFile(rawFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+//        Utils.s3UploadFile(rawTempFilePath);
+////
+////        //Invoice` file upload
+//        String invoiceTempFilePath=processFile(invoiceFilePath_1,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+//        Utils.s3UploadFile(invoiceTempFilePath);
+//
+////        //User Preference file upload
+//        String userPrefTempFilePath=processFile(userPref,executionVariables,userFilePOJO,meterFilePOJO,executionVariables.get("dataStreamId"));
+//        Utils.s3UploadFile(userPrefTempFilePath);
 
         //TODO : Add awaitility wait instead of hard wait
 //        Thread.sleep(5000);
-        Response partnerUserIdResponse= restUtils.getPartnerUserId(token,executionVariables);
-        userFilePOJO.setUuid(JsonUtils.getUuidFromPremiseId(partnerUserIdResponse));
-
-        //Calling Pilot config API
-        Response getPilotConfigResponse= restUtils.getPilotConfigs(token,AMEREN_PILOT_ID);
-        String timeZone=JsonUtils.getTimeZone(getPilotConfigResponse);
-
-        //Calling User Details API
-        Response usersApiResponse= restUtils.getUsers(userFilePOJO.getUuid(),token);
-
-        //Validating User Details API response
-        ingestionValidations.validateUserDetails(usersApiResponse,userFilePOJO,timeZone,executionVariables,AMEREN_PILOT_ID);
-
-        //Calling user config API
-        Response userConfigResponse= restUtils.getUserConfigs(token,userFilePOJO.getUuid());
-        ingestionValidations.validateUserConfig(userConfigResponse);
-
-        //Calling Meter API
-        Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws);
-//        restUtils.printResponseLogInReport(metersApiResponse);
-        ingestionValidations.validateMetersSingleMeters(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,1,model);
-
-        String t1 = String.valueOf(Instant.now().getEpochSecond());
-
-        //Calling Label TimeStamp API
-        Response label= restUtils.getLabelTimeStamp(userFilePOJO.getUuid(),token);
-        ingestionValidations.validateLableTimeStamp(label.asString());
-
-        //Calling gbJson API
-        Response gbJsonApiResponse= restUtils.getGbJsonApi(userFilePOJO.getUuid(),token,t1,scenario,gws);
-        Map<String, String> mapTimestampConsumption = getTimeStampsConsumption(rawTempFilePath);
-        ingestionValidations.validateGbJsonConsumption(gbJsonApiResponse,mapTimestampConsumption);
-
-        //Internal bucket Invoice file upload
-        t1 = String.valueOf(Instant.now().getEpochSecond());
-
-        //Calling INVOICE API
-        Response utilityDataResponse= restUtils.getUtilityData(userFilePOJO.getUuid(),token,t1);
-        Map<String, Map<String, Map<String,String>>> mapTimestampCostData = getTimeStampsInvoiceData(invoiceTempFilePath);
-        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,1);
+//        Response partnerUserIdResponse= restUtils.getPartnerUserId(token,executionVariables);
+//        userFilePOJO.setUuid(JsonUtils.getUuidFromPremiseId(partnerUserIdResponse));
+//            System.out.println(partnerUserIdResponse.asString());
+//            JSONObject obj= new JSONObject(partnerUserIdResponse.asString());
+//            JSONObject payloadObj=obj.getJSONObject("payload");
+//            JSONArray jsonArray= payloadObj.getJSONArray("data");
+//            JSONObject obj1=jsonArray.getJSONObject(0);
+//           String lat= obj1.getString("latitude");
+//            Assert.assertNull(lat);
+//
+//
+//        //Calling Pilot config API
+//        Response getPilotConfigResponse= restUtils.getPilotConfigs(token,AMEREN_PILOT_ID);
+//        String timeZone=JsonUtils.getTimeZone(getPilotConfigResponse);
+//
+//        //Calling User Details API
+//        Response usersApiResponse= restUtils.getUsers(userFilePOJO.getUuid(),token);
+//
+//        //Validating User Details API response
+//        ingestionValidations.validateUserDetails(usersApiResponse,userFilePOJO,timeZone,executionVariables,AMEREN_PILOT_ID);
+//
+//        //Calling user config API
+//        Response userConfigResponse= restUtils.getUserConfigs(token,userFilePOJO.getUuid());
+//        ingestionValidations.validateUserConfig(userConfigResponse);
+//
+////        //Calling Meter API
+//        Response metersApiResponse= restUtils.getMetersApi(userFilePOJO.getUuid(),token,gws);
+////        restUtils.printResponseLogInReport(metersApiResponse);
+//        ingestionValidations.validateMetersSingleMeters(metersApiResponse,scenario,userFilePOJO.getUuid(),AMEREN_PILOT_ID,executionVariables,meterFilePOJO,gws,1,model);
+//
+//        String t1 = String.valueOf(Instant.now().getEpochSecond());
+//
+//        //Calling Label TimeStamp API
+//        Response label= restUtils.getLabelTimeStamp(userFilePOJO.getUuid(),token);
+//        ingestionValidations.validateLableTimeStamp(label.asString());
+//
+////        //Calling gbJson API
+//        Response gbJsonApiResponse= restUtils.getGbJsonApi(userFilePOJO.getUuid(),token,t1,scenario,gws);
+//        Map<String, String> mapTimestampConsumption = getTimeStampsConsumption(rawTempFilePath);
+//        ingestionValidations.validateGbJsonConsumption(gbJsonApiResponse,mapTimestampConsumption);
+//
+//        //Internal bucket Invoice file upload
+//        t1 = String.valueOf(Instant.now().getEpochSecond());
+//
+//        //Calling INVOICE API
+//        Response utilityDataResponse= restUtils.getUtilityData(userFilePOJO.getUuid(),token,t1);
+//        Map<String, Map<String, Map<String,String>>> mapTimestampCostData = getTimeStampsInvoiceData(invoiceTempFilePath);
+//        ingestionValidations.validateUtilityData(utilityDataResponse,mapTimestampCostData,1);
 
     }
 

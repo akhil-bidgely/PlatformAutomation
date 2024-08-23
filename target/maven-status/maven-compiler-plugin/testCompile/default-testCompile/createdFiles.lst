@@ -1,0 +1,3 @@
+dataProviderFile/IngestionsDataProvider.class
+responseValidation/IngestionValidations.class
+tests/BaseTest.class
